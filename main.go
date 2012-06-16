@@ -2,17 +2,14 @@ package main
 
 import (
 	"code.google.com/p/go.net/websocket"
-//    "vandal"
 	"flag"
 	"fmt"
 	"github.com/ugorji/go-msgpack"
-	"io"
 	"net/http"
-	"bytes"
 	"os"
 	"os/signal"
-	"log"
 	"sync"
+	"time"
 )
 
 var port *int = flag.Int("p", 8000, "Port to listen.")
@@ -51,28 +48,6 @@ func sendRecvServer(ws *websocket.Conn) {
 	delete(sockets, user.UserId)
 	sockets_lock.Unlock()
 	save_wait.Done()
-//	fmt.Println("sendRecvServer finished")
-}
-
-type fileCache struct {
-	buf bytes.Buffer
-}
-
-func (f *fileCache) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Write(f.buf.Bytes())
-}
-
-func NewCache(fileName string) *fileCache {
-	f, err := os.Open(fileName)
-	if err != nil {
-		log.Fatalf("couldn't open file: %v", err)
-	}
-	ret := &fileCache{}
-	_, err = io.Copy(&ret.buf, f)
-	if err != nil {
-		log.Fatalf("couldn't read file: %v", err)
-	}
-	return ret
 }
 
 func SignalHandler (c chan os.Signal) {
@@ -82,7 +57,6 @@ func SignalHandler (c chan os.Signal) {
         fmt.Printf("closing connection for user %v\n", user_id)
         socket.Close()
     }
-//    save_wait.Add(len(sockets))
     sockets_lock.Unlock()
     save_wait.Wait()
     // Why do we become a daemon here ?
@@ -100,20 +74,15 @@ func main() {
     go SignalHandler(SignalChan)
     signal.Notify(SignalChan, os.Interrupt, os.Kill)
 
-	static_files := []string{
-	    "index.html", "script.js", "buddy.png", "chat.png", "close.png",
-	    "crosshair.png", "eraser.png", "handle.png", "pen.png", "arrow.gif",
-	    "hs.png", "cross.gif",
-	}
-	for _, fname := range static_files {
-	    cache := NewCache("static/" + fname)
-	    http.Handle("/" + fname, cache)
-	    if fname == "index.html" {
-	        http.Handle("/", cache)
-	    }
-	}
-	
+    go func() {
+        tick := time.Tick(1 * time.Minute)
+        for _ = range tick {
+            SaveAllLocations()
+        }
+    }()
+
 	http.Handle("/ws", websocket.Handler(sendRecvServer))
+	http.Handle("/", http.FileServer(http.Dir("static")))
 	fmt.Printf("http://localhost:%d/\n", *port)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
 	if err != nil {

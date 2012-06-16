@@ -27,6 +27,14 @@ func Base64Encode(data string) string {
     return bb.String()
 } 
 
+func SaveAllLocations() {
+    for _, location := range Locations {
+        location.Mutex.Lock()
+        location.Save()
+        location.Mutex.Unlock()
+    }
+}
+
 type Location struct {
     Url string
     Users []*User
