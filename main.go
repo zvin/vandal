@@ -18,7 +18,7 @@ var sockets_lock sync.Mutex
 var save_wait sync.WaitGroup
 
 func sendRecvServer(ws *websocket.Conn) {
-//	fmt.Printf("new connection from %v asking for %v\n", ws.Request().RemoteAddr, ws.Request().RequestURI)
+	//	fmt.Printf("new connection from %v asking for %v\n", ws.Request().RemoteAddr, ws.Request().RequestURI)
 	save_wait.Add(1)
 	user := NewUser(ws)
 	sockets_lock.Lock()
@@ -32,13 +32,13 @@ func sendRecvServer(ws *websocket.Conn) {
 			fmt.Printf("error while reading socket: %v\n", err)
 			break
 		}
-//		fmt.Printf("recv:%q\n", buf)
+		//		fmt.Printf("recv:%q\n", buf)
 		var v []interface{}
 		err = msgpack.Unmarshal([]byte(buf), &v, nil)
 		if err != nil {
 			fmt.Printf("this is not msgpack: '%v'\n", buf)
 		} else {
-//			fmt.Printf("Received msgpack encoded: '%v'\n", v)
+			//			fmt.Printf("Received msgpack encoded: '%v'\n", v)
 			user.GotMessage(v)
 		}
 	}
@@ -50,36 +50,36 @@ func sendRecvServer(ws *websocket.Conn) {
 	save_wait.Done()
 }
 
-func SignalHandler (c chan os.Signal) {
-    fmt.Printf("signal %v\n", <-c)
-    sockets_lock.Lock()
-    for user_id, socket := range sockets {
-        fmt.Printf("closing connection for user %v\n", user_id)
-        socket.Close()
-    }
-    sockets_lock.Unlock()
-    save_wait.Wait()
-    // Why do we become a daemon here ?
-    fmt.Printf("exit\n")
-    os.Exit(0)
+func SignalHandler(c chan os.Signal) {
+	fmt.Printf("signal %v\n", <-c)
+	sockets_lock.Lock()
+	for user_id, socket := range sockets {
+		fmt.Printf("closing connection for user %v\n", user_id)
+		socket.Close()
+	}
+	sockets_lock.Unlock()
+	save_wait.Wait()
+	// Why do we become a daemon here ?
+	fmt.Printf("exit\n")
+	os.Exit(0)
 }
 
-func init () {
-    sockets = make(map[int]*websocket.Conn)
+func init() {
+	sockets = make(map[int]*websocket.Conn)
 }
 
 func main() {
 	flag.Parse()
-    SignalChan := make(chan os.Signal)
-    go SignalHandler(SignalChan)
-    signal.Notify(SignalChan, os.Interrupt, os.Kill)
+	SignalChan := make(chan os.Signal)
+	go SignalHandler(SignalChan)
+	signal.Notify(SignalChan, os.Interrupt, os.Kill)
 
-    go func() {
-        tick := time.Tick(1 * time.Minute)
-        for _ = range tick {
-            SaveAllLocations()
-        }
-    }()
+	go func() {
+		tick := time.Tick(1 * time.Minute)
+		for _ = range tick {
+			SaveAllLocations()
+		}
+	}()
 
 	http.Handle("/ws", websocket.Handler(sendRecvServer))
 	http.Handle("/", http.FileServer(http.Dir("static")))
