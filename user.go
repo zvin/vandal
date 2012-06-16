@@ -162,7 +162,7 @@ func (user *User) OnOpen() {
 			[]interface{}{other.PositionX, other.PositionY},
 			[]interface{}{other.ColorRed, other.ColorGreen, other.ColorBlue},
 			other.MouseIsDown,
-			false, // you
+			false, // not you
 			other.Nickname,
 			other.UsePen,
 		})
@@ -171,8 +171,7 @@ func (user *User) OnOpen() {
 	user.SendEvent([]interface{}{
 		EventTypeWelcome,
 		user.Location.GetB64Image(),
-		user.Location.GetDelta(), // delta TODO
-		//        []interface{}{},
+		user.Location.GetDelta(),
 	})
 	// Send this new user to other users:
 	event := []interface{}{
@@ -180,7 +179,7 @@ func (user *User) OnOpen() {
 		[]interface{}{user.PositionX, user.PositionY},
 		[]interface{}{user.ColorRed, user.ColorGreen, user.ColorBlue},
 		user.MouseIsDown,
-		false, // you
+		false, // not you
 		user.Nickname,
 		user.UsePen,
 	}
@@ -201,7 +200,6 @@ func (user *User) OnOpen() {
 }
 
 func (user *User) OnClose() {
-	//    try:
 	user.Location.Mutex.RLock()
 	user.Broadcast([]interface{}{EventTypeLeave}, true)
 	user.Location.Mutex.RUnlock()
@@ -209,6 +207,4 @@ func (user *User) OnClose() {
 	user.Location.RemoveUser(user)
 	user.Location.Mutex.Unlock()
 	fmt.Printf("%d left\n", user.UserId)
-	//    except:
-	//        fmt.Printf("%d doesn't exist", user.UserId)
 }

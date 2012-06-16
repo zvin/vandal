@@ -16,7 +16,10 @@ const (
 	HEIGHT = 3000
 )
 
-var Locations map[string]*Location
+var (
+	Locations      map[string]*Location
+	LocationsMutex sync.RWMutex
+)
 
 //func Base64Encode(data []byte) *bytes.Buffer {
 func Base64Encode(data string) string {
@@ -28,6 +31,8 @@ func Base64Encode(data string) string {
 }
 
 func SaveAllLocations() {
+	LocationsMutex.RLock()
+	defer LocationsMutex.RUnlock()
 	for _, location := range Locations {
 		location.Mutex.Lock()
 		location.Save()
@@ -49,11 +54,15 @@ func init() {
 }
 
 func GetLocation(url string) *Location {
+	LocationsMutex.Lock()
 	location, present := Locations[url]
 	if present {
 		return location
+	} else {
+		location = NewLocation(url)
 	}
-	return NewLocation(url)
+	LocationsMutex.Unlock()
+	return location
 }
 
 func MinInt(a, b int) int {
@@ -88,8 +97,10 @@ func (location *Location) AddUser(user *User) {
 func (location *Location) RemoveUser(user *User) {
 	location.Users = Remove(location.Users, user)
 	if len(location.Users) == 0 {
-		location.Save() // TODO
+		location.Save()
+		LocationsMutex.Lock()
 		delete(Locations, location.Url)
+		LocationsMutex.Unlock()
 	}
 }
 
@@ -118,7 +129,7 @@ func (location *Location) DrawLine(x1, y1, x2, y2, duration, red, green, blue in
 		location.Surface.SetOperator(cairo.OperatorOver)
 		location.Surface.SetSourceRGB(float64(red)/255., float64(green)/255., float64(blue)/255.)
 	}
-	location.Surface.SetLineWidth(1. / speed)
+	location.Surface.SetLineWidth(1. / (speed * 3))
 	location.Surface.MoveTo(float64(x1), float64(y1))
 	location.Surface.LineTo(float64(x2), float64(y2))
 	location.Surface.Stroke()
