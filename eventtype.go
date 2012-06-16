@@ -12,4 +12,5 @@ const (
 	EventTypeMouseDown
 	EventTypeChatMessage
 	EventTypeChangeNickname
+	EventTypeError
 )

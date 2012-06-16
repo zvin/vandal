@@ -55,13 +55,13 @@ func init() {
 
 func GetLocation(url string) *Location {
 	LocationsMutex.Lock()
+	defer LocationsMutex.Unlock()
 	location, present := Locations[url]
 	if present {
 		return location
 	} else {
 		location = NewLocation(url)
 	}
-	LocationsMutex.Unlock()
 	return location
 }
 

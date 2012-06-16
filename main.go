@@ -21,6 +21,10 @@ func sendRecvServer(ws *websocket.Conn) {
 	//	fmt.Printf("new connection from %v asking for %v\n", ws.Request().RemoteAddr, ws.Request().RequestURI)
 	save_wait.Add(1)
 	user := NewUser(ws)
+	if user == nil {
+		save_wait.Done()
+		return
+	}
 	sockets_lock.Lock()
 	sockets[user.UserId] = ws
 	sockets_lock.Unlock()

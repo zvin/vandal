@@ -8,6 +8,8 @@ import (
 	"reflect"
 )
 
+const MAX_USERS_PER_LOCATION = 15
+
 var UserCount int
 
 type User struct {
@@ -34,6 +36,10 @@ func NewUser(ws *websocket.Conn) *User {
 		panic(err)
 	}
 	user.Location = GetLocation(location_url)
+	if len(user.Location.Users) >= MAX_USERS_PER_LOCATION {
+		user.Error("Too much users at this location, try adding #something at the end of the URL.")
+		return nil
+	}
 	user.Location.Mutex.Lock()
 	user.Location.AddUser(user)
 	user.Location.Mutex.Unlock()
@@ -58,6 +64,14 @@ func (user *User) SendEvent(event []interface{}) {
 		fmt.Printf("Couldn't send to %d: %v\n", user.UserId, err)
 		user.Socket.Close()
 	}
+}
+
+func (user *User) Error(description string) {
+	user.SendEvent([]interface{}{
+		EventTypeError,
+		description,
+	})
+	user.Socket.Close()
 }
 
 func (user *User) Broadcast(event []interface{}, include_myself bool) {
@@ -206,5 +220,4 @@ func (user *User) OnClose() {
 	user.Location.Mutex.Lock()
 	user.Location.RemoveUser(user)
 	user.Location.Mutex.Unlock()
-	fmt.Printf("%d left\n", user.UserId)
 }
