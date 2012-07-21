@@ -2,7 +2,6 @@ package main
 
 import (
 	"code.google.com/p/go.net/websocket"
-	"fmt"
 	"github.com/ugorji/go-msgpack"
 	"net/url"
 	"reflect"
@@ -61,7 +60,7 @@ func (user *User) SendEvent(event []interface{}) {
 	//    fmt.Printf("sending %v to %d %#v\n", EncodeEvent(event), user.UserId, user.Socket)
 	err := websocket.Message.Send(user.Socket, EncodeEvent(event))
 	if err != nil {
-		fmt.Printf("Couldn't send to %d: %v\n", user.UserId, err)
+		Log.Printf("Couldn't send to %d: %v\n", user.UserId, err)
 		user.Socket.Close()
 	}
 }
@@ -135,7 +134,7 @@ func ToInt(n interface{}) (result int) {
 	case uint, uint8, uint16, uint32, uint64:
 		result = int(reflect.ValueOf(n).Uint())
 	default:
-		fmt.Printf("%#v ", n)
+		Log.Printf("not an int: %#v ", n)
 		panic("not an int!")
 	}
 	return result

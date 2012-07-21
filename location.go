@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/base64"
-	"fmt"
 	"github.com/zvin/gocairo"
 	"io/ioutil"
 	"math"
@@ -31,8 +30,13 @@ func Base64Encode(data string) string {
 }
 
 func SaveAllLocations() {
+	Log.Printf("SaveAllLocations wants locations rlock.")
 	LocationsMutex.RLock()
-	defer LocationsMutex.RUnlock()
+	Log.Printf("SaveAllLocations got locations rlock.")
+	defer func() {
+		LocationsMutex.RUnlock()
+		Log.Printf("SaveAllLocations released locations rlock.")
+	}()
 	for _, location := range Locations {
 		location.Mutex.Lock()
 		location.Save()
@@ -54,8 +58,13 @@ func init() {
 }
 
 func GetLocation(url string) *Location {
+	Log.Printf("GetLocation wants locations lock.")
 	LocationsMutex.Lock()
-	defer LocationsMutex.Unlock()
+	Log.Printf("GetLocation got locations lock.")
+	defer func() {
+		LocationsMutex.Unlock()
+		Log.Printf("GetLocation released locations lock.")
+	}()
 	location, present := Locations[url]
 	if present {
 		return location
@@ -79,7 +88,7 @@ func NewLocation(url string) *Location {
 	b64fname := Base64Encode(url)
 	b64fname = b64fname[:MinInt(len(b64fname), 251)]
 	loc.FileName = "img/" + strings.Replace(b64fname, "/", "_", -1) + ".png" // filename
-	fmt.Println(loc.FileName)
+	Log.Printf("filename: %v", loc.FileName)
 	loc.Surface = cairo.NewSurfaceFromPNG(loc.FileName)
 	if loc.Surface.SurfaceStatus() != 0 {
 		loc.Surface.Finish()
@@ -98,9 +107,12 @@ func (location *Location) RemoveUser(user *User) {
 	location.Users = Remove(location.Users, user)
 	if len(location.Users) == 0 {
 		location.Save()
+		Log.Printf("RemoveUser user %v location %v wants locations lock.", user.UserId, location.Url)
 		LocationsMutex.Lock()
+		Log.Printf("RemoveUser user %v location %v got locations lock.", user.UserId, location.Url)
 		delete(Locations, location.Url)
 		LocationsMutex.Unlock()
+		Log.Printf("RemoveUser user %v location %v released locations lock.", user.UserId, location.Url)
 	}
 }
 
@@ -138,7 +150,7 @@ func (location *Location) DrawLine(x1, y1, x2, y2, duration, red, green, blue in
 func (location *Location) GetB64Image() string {
 	data, err := ioutil.ReadFile(location.FileName)
 	if err != nil {
-		fmt.Println("Error reading file ", err)
+		Log.Println("Error reading file ", err)
 	}
 	return Base64Encode(string(data))
 }
@@ -149,7 +161,7 @@ func (location *Location) GetDelta() []interface{} {
 
 func (location *Location) Save() {
 	if len(location.delta) > 0 {
-		fmt.Printf("save %s %d\n", location.Url, len(location.delta))
+		Log.Printf("save %s (delta %d)\n", location.Url, len(location.delta))
 		location.Surface.WriteToPNG(location.FileName) // Output to PNG
 		location.delta = nil
 	}
