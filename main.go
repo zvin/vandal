@@ -8,7 +8,9 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sort"
 	"sync"
+	"html/template"
 	"time"
 )
 
@@ -16,6 +18,8 @@ var port *int = flag.Int("p", 8000, "Port to listen.")
 var sockets map[int]*websocket.Conn
 var sockets_lock sync.Mutex
 var save_wait sync.WaitGroup
+var current_ranking Ranking
+var index_template = template.Must(template.ParseFiles("templates/index.html"))
 
 func sendRecvServer(ws *websocket.Conn) {
 	//	fmt.Printf("new connection from %v asking for %v\n", ws.Request().RemoteAddr, ws.Request().RequestURI)
@@ -72,11 +76,55 @@ func init() {
 	sockets = make(map[int]*websocket.Conn)
 }
 
+type Website struct {
+	Url string
+	UserCount int
+}
+
+type Ranking []Website
+
+func (r Ranking) Len() int {
+    return len(r)
+}
+
+func (r Ranking) Less(i, j int) bool {
+    return r[i].UserCount > r[j].UserCount  // we went it in the reverse order
+}
+
+func (r Ranking) Swap(i, j int) {
+    r[i], r[j] = r[j], r[i]
+}
+
+func UpdateRanking() {
+	var ranking Ranking
+	LocationsMutex.Lock()
+	for _, location := range Locations {
+		ranking = append(ranking, Website{Url: location.Url, UserCount: len(location.Users)})
+	}
+	LocationsMutex.Unlock()
+	sort.Sort(ranking)
+	current_ranking = ranking[:MinInt(len(ranking), 10)]
+}
+
+func IndexHandler(w http.ResponseWriter, r *http.Request) {
+	err := index_template.Execute(w, current_ranking)
+	if err != nil {
+		fmt.Printf("Couldn't execute template: %v\n", err)
+	}
+}
+
 func main() {
 	flag.Parse()
 	SignalChan := make(chan os.Signal)
 	go SignalHandler(SignalChan)
 	signal.Notify(SignalChan, os.Interrupt, os.Kill)
+
+	go func() {
+		tick := time.Tick(10 * time.Second)
+		for _ = range tick {
+			UpdateRanking()
+		}
+	}()
 
 	go func() {
 		tick := time.Tick(1 * time.Minute)
@@ -86,7 +134,8 @@ func main() {
 	}()
 
 	http.Handle("/ws", websocket.Handler(sendRecvServer))
-	http.Handle("/", http.FileServer(http.Dir("static")))
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	http.Handle("/", http.HandlerFunc(IndexHandler))
 	fmt.Printf("http://localhost:%d/\n", *port)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
 	if err != nil {
