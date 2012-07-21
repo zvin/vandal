@@ -144,14 +144,12 @@ func (location *Location) GetB64Image() string {
 }
 
 func (location *Location) GetDelta() []interface{} {
-	// TODO: lock
-	//    fmt.Printf("GetDelta returns %v\n", location.delta)
 	return location.delta
 }
 
 func (location *Location) Save() {
-	fmt.Printf("save %s %d\n", location.Url, len(location.delta))
 	if len(location.delta) > 0 {
+		fmt.Printf("save %s %d\n", location.Url, len(location.delta))
 		location.Surface.WriteToPNG(location.FileName) // Output to PNG
 		location.delta = nil
 	}

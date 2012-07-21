@@ -8,7 +8,7 @@ import (
 	"reflect"
 )
 
-const MAX_USERS_PER_LOCATION = 15
+const MAX_USERS_PER_LOCATION = 20
 
 var UserCount int
 
