@@ -113,6 +113,8 @@ func (location *Location) RemoveUser(user *User) {
 		delete(Locations, location.Url)
 		LocationsMutex.Unlock()
 		Log.Printf("RemoveUser user %v location %v released locations lock.", user.UserId, location.Url)
+		location.Surface.Finish()
+		location.Surface.Destroy()
 	}
 }
 
