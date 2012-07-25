@@ -38,9 +38,12 @@ func SaveAllLocations() {
 		Log.Printf("SaveAllLocations released locations rlock.")
 	}()
 	for _, location := range Locations {
+		Log.Printf("SaveAllLocations wants %v lock.", location.Url)
 		location.Mutex.Lock()
+		Log.Printf("SaveAllLocations got %v lock.", location.Url)
 		location.Save()
 		location.Mutex.Unlock()
+		Log.Printf("SaveAllLocations released %v lock.", location.Url)
 	}
 }
 
