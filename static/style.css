@@ -1,0 +1,105 @@
+*{
+	margin: 0;
+	padding: 0;
+}
+
+body{
+	font: 12px/15px Arial, Helvetica, sans-serif;
+	background: url(/static/main.png) no-repeat center top;
+}
+
+#conteneur{
+	width: 560px;
+	margin: 20px auto;
+
+}
+
+a{
+	color: #396;
+}
+
+a:hover{
+	color: #F30B55;
+}
+
+ul{
+	list-style-position: inside;
+}
+
+.logo{
+	float: left;
+	width: 163px;
+	height: 30px;
+	padding: 120px 0 0 0;
+	background: url(/static/eatponies.png) no-repeat;
+	text-align: center;
+	font-size: 22px;
+	line-height: 30px;
+}
+
+.logo + div{
+	float: left;
+	width: 100px;
+	height: 150px;
+	background: url(/static/arrow.png) no-repeat 10px 50px;
+}
+
+.link{
+	float: left;
+	width: 163px;
+	height: 140px;
+	margin: 0 0 0 20px;
+	background: url(/static/link.png) no-repeat 10px 8px #00cfb4;
+	-webkit-border-radius: 15px;
+    border-radius: 15px;
+	-webkit-box-shadow: 5px 5px 0px 0px #000000;
+	box-shadow: 5px 5px 0px 0px #000000;
+	cursor: pointer;
+}
+
+.link:hover{
+	position: relative;
+	left: 5px;
+	top: 5px;
+	background: url(/static/link.png) no-repeat 10px 6px #F30B55;
+	-webkit-box-shadow: 0px 0px 0px 0px #000;
+	box-shadow: 0px 0px 0px 0px #000;
+}
+
+.link a{
+	opacity: 0;
+	height: 140px;
+	display: block;
+}
+
+#header,
+p{
+	overflow: auto;
+}
+
+.part{
+	clear: both;
+	position: relative;
+	width: 520px;
+	padding: 20px;
+	margin: 65px 0 0 0;
+	border: 1px solid #CCC;
+	-webkit-border-radius: 15px;
+    border-radius: 15px;
+	-webkit-box-shadow: 3px 3px 5px 2px #ccc;
+	box-shadow: 3px 3px 5px 2px #ccc;
+}
+
+.part h1{
+	position: absolute;
+	left: 20px;
+	top: -31px;
+	font-size: 36px;
+	font-weight: normal;
+	line-height: 36px;
+}
+
+.part img{
+	float: right;
+	margin: 0 0 0 20px;
+}
