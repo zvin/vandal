@@ -44,3 +44,5 @@ RUN THE SERVER
  * run the server
 
     ./vandal -p 8000
+
+ * open your browser at http://localhost:8000
