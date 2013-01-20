@@ -197,13 +197,13 @@ func (user *User) OnOpen() {
 			other.UsePen,
 		})
 	}
-	// Send the image of this url to the new user:
+	// Send the image without packing it in msgpack to the new user:
+	user.SendImage(user.Location.GetImageBytes())
+	// Send the delta between the image and now to the new user:
 	user.SendEvent([]interface{}{
 		EventTypeWelcome,
 		user.Location.GetDelta(),
 	})
-	// Send the image without packing it in msgpack
-	user.SendImage(user.Location.GetImageBytes())
 	// Send this new user to other users:
 	event := []interface{}{
 		EventTypeJoin,

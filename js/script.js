@@ -32,7 +32,7 @@ var DOMAIN              = "DOMAIN_PLACEHOLDER",
     incoming_blobs = [],
     is_decoding = false,
     chat_div, myPicker, nickname_span, canvas, messages_div, mySocket,
-    mask_canvas, ctx, mask_ctx, biggest_node, last_time, toolbar
+    mask_canvas, ctx, mask_ctx, biggest_node, last_time, toolbar, loading_box
 
 
 /**
@@ -275,6 +275,7 @@ function gotmessage(event){
         add_chat_message(user.get_label(), event[0])
     }else if (type == EventType.welcome){
         draw_delta(event[0])         // delta
+        set_loading_off()
     }else if (type == EventType.change_nickname){
         user.change_nickname.apply(user, event)
     }
@@ -490,6 +491,38 @@ function create_toolbar(){
         },
         false
     )
+}
+
+function create_loading_box(){
+	loading_box = create_element("div")
+    loading_box.style.position = "fixed"
+    loading_box.style.top  = "50%"
+    loading_box.style.left = "50%"
+    loading_box.style.marginLeft = "-100px"
+    loading_box.style.marginTop = "-25px"
+    loading_box.style.width  = "200px"
+    loading_box.style.height = "50px"
+    loading_box.style.border = "2px solid #000000"
+    loading_box.style.backgroundColor = "white"
+    loading_box.style.padding = "10px"
+    loading_box.style.fontFamily = "Arial, Helvetica, sans-serif"
+    loading_box.style.fontSize = "36px"
+    loading_box.style.fontWeight = "normal"
+    loading_box.style.fontVariant = "normal"
+    loading_box.style.fontStyle = "normal"
+    loading_box.style.lineHeight = "50px"
+    loading_box.style.textAlign = "center"
+    loading_box.style.zIndex = "100005"
+    loading_box.appendChild(document.createTextNode("Loading..."))
+    document.body.appendChild(loading_box)
+}
+
+function set_loading_on(){
+	loading_box.style.display = "block"
+}
+
+function set_loading_off(){
+	loading_box.style.display = "none"
 }
 
 function create_chat_window(){
@@ -792,6 +825,8 @@ function create_socket(){
 
     create_toolbar()
     create_chat_window()
+    create_loading_box()
+    set_loading_on()
     create_socket()
     reposition_canvas()
     window.onresize = reposition_canvas
