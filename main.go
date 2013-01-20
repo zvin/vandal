@@ -60,7 +60,12 @@ func sendRecvServer(ws *websocket.Conn) {
 			Log.Println("GotMessage", "released Lock")
 		}
 	}
+	Log.Println("OnClose", "want Lock")
+	GlobalLock.Lock()
+	Log.Println("OnClose", "got Lock")
 	user.OnClose()
+	GlobalLock.Unlock()
+	Log.Println("OnClose", "released Lock")
 	ws.Close()
 	sockets_lock.Lock()
 	delete(sockets, user.UserId)
