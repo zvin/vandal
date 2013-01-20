@@ -1,0 +1,45 @@
+events:
+ * 1 join(                                                        [only server -> browser]
+    user_id      : int,
+    position     : [int, int],
+    color        : [int, int, int],
+    mouse_is_down: bool,
+    you          : bool,
+    nickname     : char[10],
+    use_pen      : bool
+   )
+ * 2 leave(user_id: int)                                          [only server -> browser]
+ * 3 welcome(                                                     [only server -> browser]
+    image: char,
+    delta: list of [
+        x1       : int,
+        y1       : int,
+        x2       : int,
+        y2       : int,
+        duration : int,
+        red      : int,
+        green    : int,
+        blue     : int,
+        use_pen  : bool
+    ]
+   )
+ * 4 change_color(user_id: int, red: int, green: int, blue: int)
+ * 5 change_tool(user_id: int, use_pen: bool)                     [use_pen=1: pen; use_pen=0: eraser]
+ * 6 mouse_move(user_id: int, x: int, y: int, duration: int)
+ * 7 mouse_up(user_id: int)
+ * 8 mouse_down(user_id: int)
+ * 9 chat_message(user_id: int, message: char)
+ * 10 change_nickname(user_id: int, nickname: char)
+
+
+message structure:
+    * message_type_id
+    * *parameters
+
+
+state:
+ * user_id
+ * x, y
+ * r, g, b
+ * use_pen
+ * mouse_is_down
