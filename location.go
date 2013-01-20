@@ -30,7 +30,6 @@ func SaveAllLocations() {
 	GlobalLock.Lock()
 	defer func() {
 		GlobalLock.Unlock()
-		Log.Printf("SaveAllLocations released locations rlock.")
 	}()
 	for _, location := range Locations {
 		location.Save()

@@ -41,7 +41,7 @@ func sendRecvServer(ws *websocket.Conn) {
 		var buf []byte
 		err := websocket.Message.Receive(ws, &buf)
 		if err != nil {
-			Log.Printf("error while reading socket: %v\n", err)
+			Log.Printf("error while reading socket for user %v: %v\n", user.Id, err)
 			break
 		}
 		var v []interface{}
