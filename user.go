@@ -69,6 +69,9 @@ func (user *User) SendEvent(event []interface{}) {
 }
 
 func (user *User) SendImage(bytes []byte) {
+	if len(bytes) == 0 {
+		return
+	}
 	err := websocket.Message.Send(user.Socket, bytes)
 	if err != nil {
 		Log.Printf("Couldn't send image to %d: %v\n", user.UserId, err)
