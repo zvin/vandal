@@ -15,6 +15,7 @@ import (
 	"log"
 )
 
+var GlobalLock sync.Mutex
 var port *int = flag.Int("p", 8000, "Port to listen.")
 var sockets map[int]*websocket.Conn
 var sockets_lock sync.Mutex
@@ -24,9 +25,10 @@ var index_template = template.Must(template.ParseFiles("templates/index.html"))
 var Log *log.Logger
 
 func sendRecvServer(ws *websocket.Conn) {
-	//	fmt.Printf("new connection from %v asking for %v\n", ws.Request().RemoteAddr, ws.Request().RequestURI)
 	save_wait.Add(1)
+	GlobalLock.Lock()
 	user := NewUser(ws)
+	GlobalLock.Unlock()
 	if user == nil {
 		save_wait.Done()
 		return
@@ -42,14 +44,14 @@ func sendRecvServer(ws *websocket.Conn) {
 			Log.Printf("error while reading socket: %v\n", err)
 			break
 		}
-		//		fmt.Printf("recv:%q\n", buf)
 		var v []interface{}
 		err = msgpack.Unmarshal([]byte(buf), &v, nil)
 		if err != nil {
 			Log.Printf("this is not msgpack: '%v'\n", buf)
 		} else {
-			//			fmt.Printf("Received msgpack encoded: '%v'\n", v)
+			GlobalLock.Lock()
 			user.GotMessage(v)
+			GlobalLock.Unlock()
 		}
 	}
 	user.OnClose()
@@ -106,14 +108,11 @@ func (r Ranking) Swap(i, j int) {
 
 func UpdateRanking() {
 	var ranking Ranking
-	Log.Printf("UpdateRanking wants locations lock.")
-	LocationsMutex.Lock()
-	Log.Printf("UpdateRanking got locations lock.")
+	GlobalLock.Lock()
 	for _, location := range Locations {
 		ranking = append(ranking, Website{Url: location.Url, UserCount: len(location.Users)})
 	}
-	LocationsMutex.Unlock()
-	Log.Printf("UpdateRanking released locations lock.")
+	GlobalLock.Unlock()
 	sort.Sort(ranking)
 	current_ranking = ranking[:MinInt(len(ranking), 10)]
 }

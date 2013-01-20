@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"math"
 	"strings"
-	"sync"
 )
 
 const (
@@ -17,10 +16,8 @@ const (
 
 var (
 	Locations      map[string]*Location
-	LocationsMutex sync.RWMutex
 )
 
-//func Base64Encode(data []byte) *bytes.Buffer {
 func Base64Encode(data string) string {
 	bb := &bytes.Buffer{}
 	encoder := base64.NewEncoder(base64.StdEncoding, bb)
@@ -30,20 +27,13 @@ func Base64Encode(data string) string {
 }
 
 func SaveAllLocations() {
-	Log.Printf("SaveAllLocations wants locations rlock.")
-	LocationsMutex.RLock()
-	Log.Printf("SaveAllLocations got locations rlock.")
+	GlobalLock.Lock()
 	defer func() {
-		LocationsMutex.RUnlock()
+		GlobalLock.Unlock()
 		Log.Printf("SaveAllLocations released locations rlock.")
 	}()
 	for _, location := range Locations {
-		Log.Printf("SaveAllLocations wants %v lock.", location.Url)
-		location.Mutex.Lock()
-		Log.Printf("SaveAllLocations got %v lock.", location.Url)
 		location.Save()
-		location.Mutex.Unlock()
-		Log.Printf("SaveAllLocations released %v lock.", location.Url)
 	}
 }
 
@@ -53,7 +43,6 @@ type Location struct {
 	FileName string
 	Surface  *cairo.Surface
 	delta    []interface{}
-	Mutex    sync.RWMutex
 }
 
 func init() {
@@ -61,13 +50,6 @@ func init() {
 }
 
 func GetLocation(url string) *Location {
-	Log.Printf("GetLocation wants locations lock.")
-	LocationsMutex.Lock()
-	Log.Printf("GetLocation got locations lock.")
-	defer func() {
-		LocationsMutex.Unlock()
-		Log.Printf("GetLocation released locations lock.")
-	}()
 	location, present := Locations[url]
 	if present {
 		return location
@@ -110,12 +92,7 @@ func (location *Location) RemoveUser(user *User) {
 	location.Users = Remove(location.Users, user)
 	if len(location.Users) == 0 {
 		location.Save()
-		Log.Printf("RemoveUser user %v location %v wants locations lock.", user.UserId, location.Url)
-		LocationsMutex.Lock()
-		Log.Printf("RemoveUser user %v location %v got locations lock.", user.UserId, location.Url)
 		delete(Locations, location.Url)
-		LocationsMutex.Unlock()
-		Log.Printf("RemoveUser user %v location %v released locations lock.", user.UserId, location.Url)
 		location.Surface.Finish()
 		location.Surface.Destroy()
 	}

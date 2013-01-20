@@ -39,12 +39,7 @@ func NewUser(ws *websocket.Conn) *User {
 		user.Error("Too much users at this location, try adding #something at the end of the URL.")
 		return nil
 	}
-	Log.Printf("NewUser %v wants %v lock.", user.UserId, user.Location.Url)
-	user.Location.Mutex.Lock()
-	Log.Printf("NewUser %v got %v lock.", user.UserId, user.Location.Url)
 	user.Location.AddUser(user)
-	user.Location.Mutex.Unlock()
-	Log.Printf("NewUser %v released %v lock.", user.UserId, user.Location.Url)
 	user.UsePen = true
 	user.OnOpen()
 	return user
@@ -106,9 +101,6 @@ func (user *User) Broadcast(event []interface{}, include_myself bool) {
 func (user *User) MouseMove(x int, y int, duration int) {
 	//    fmt.Printf("mouse move\n")
 	if user.MouseIsDown {
-//	    Log.Printf("%v.MouseMove wants %v lock.", user.UserId, user.Location.Url)
-		user.Location.Mutex.Lock()
-//		Log.Printf("%v.MouseMove got %v lock.", user.UserId, user.Location.Url)
 		user.Location.DrawLine(
 			user.PositionX, user.PositionY, // origin
 			x, y, // destination
@@ -116,8 +108,6 @@ func (user *User) MouseMove(x int, y int, duration int) {
 			user.ColorRed, user.ColorGreen, user.ColorBlue, // color
 			user.UsePen, // pen or eraser
 		)
-		user.Location.Mutex.Unlock()
-//		Log.Printf("%v.MouseMove released %v lock.", user.UserId, user.Location.Url)
 	}
 	user.PositionX = x
 	user.PositionY = y
@@ -159,19 +149,14 @@ func ToInt(n interface{}) (result int) {
 }
 
 func (user *User) GotMessage(event []interface{}) {
-	//    fmt.Printf("event %v\n", event)
 	event_type := ToInt(event[0])
 	params := event[1:]
-	//    fmt.Printf("event_type %#v %#v, %v\n", event_type, EventTypeMouseMove, event_type == EventTypeMouseMove)
 	switch event_type {
 	case EventTypeMouseMove:
-		//        fmt.Printf("mousemove\n")
 		user.MouseMove(ToInt(params[0]), ToInt(params[1]), ToInt(params[2]))
 	case EventTypeMouseUp:
-		//        fmt.Printf("mouseup\n")
 		user.MouseUp()
 	case EventTypeMouseDown:
-		//        fmt.Printf("mousedown\n")
 		user.MouseDown()
 	case EventTypeChangeTool:
 		user.ChangeTool(params[0].(int8) != 0)
@@ -185,9 +170,6 @@ func (user *User) GotMessage(event []interface{}) {
 
 func (user *User) OnOpen() {
 	// Send the list of present users to this user:
-	Log.Printf("%v.OnOpen wants %s rlock.", user.UserId, user.Location.Url)
-	user.Location.Mutex.RLock()
-	Log.Printf("%v.OnOpen got %s rlock.", user.UserId, user.Location.Url)
 	for _, other := range user.Location.Users {
 		user.SendEvent([]interface{}{
 			EventTypeJoin,
@@ -218,8 +200,6 @@ func (user *User) OnOpen() {
 		user.UsePen,
 	}
 	user.Broadcast(event, false)
-	user.Location.Mutex.RUnlock()
-	Log.Printf("%v.OnOpen released %s rlock.", user.UserId, user.Location.Url)
 	// Send this user to himself
 	event = []interface{}{
 		EventTypeJoin,
@@ -235,16 +215,6 @@ func (user *User) OnOpen() {
 }
 
 func (user *User) OnClose() {
-    Log.Printf("%v.OnClose wants %s rlock.", user.UserId, user.Location.Url)
-	user.Location.Mutex.RLock()
-	Log.Printf("%v.OnClose got %s rlock.", user.UserId, user.Location.Url)
 	user.Broadcast([]interface{}{EventTypeLeave}, true)
-	user.Location.Mutex.RUnlock()
-	Log.Printf("%v.OnClose released %s rlock.", user.UserId, user.Location.Url)
-	Log.Printf("%v.OnClose wants %s lock.", user.UserId, user.Location.Url)
-	user.Location.Mutex.Lock()
-	Log.Printf("%v.OnClose got %s lock.", user.UserId, user.Location.Url)
 	user.Location.RemoveUser(user)
-	user.Location.Mutex.Unlock()
-	Log.Printf("%v.OnClose released %s lock.", user.UserId, user.Location.Url)
 }
