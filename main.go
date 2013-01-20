@@ -26,9 +26,12 @@ var Log *log.Logger
 
 func sendRecvServer(ws *websocket.Conn) {
 	save_wait.Add(1)
+	Log.Println("NewUser", "want Lock")
 	GlobalLock.Lock()
+	Log.Println("NewUser", "got Lock")
 	user := NewUser(ws)
 	GlobalLock.Unlock()
+	Log.Println("NewUser", "released Lock")
 	if user == nil {
 		save_wait.Done()
 		return
@@ -49,9 +52,12 @@ func sendRecvServer(ws *websocket.Conn) {
 		if err != nil {
 			Log.Printf("this is not msgpack: '%v'\n", buf)
 		} else {
+			Log.Println("GotMessage", "want Lock")
 			GlobalLock.Lock()
+			Log.Println("GotMessage", "got Lock")
 			user.GotMessage(v)
 			GlobalLock.Unlock()
+			Log.Println("GotMessage", "released Lock")
 		}
 	}
 	user.OnClose()
@@ -108,11 +114,14 @@ func (r Ranking) Swap(i, j int) {
 
 func UpdateRanking() {
 	var ranking Ranking
+	Log.Println("UpdateRanking", "want Lock")
 	GlobalLock.Lock()
+	Log.Println("UpdateRanking", "got Lock")
 	for _, location := range Locations {
 		ranking = append(ranking, Website{Url: location.Url, UserCount: len(location.Users)})
 	}
 	GlobalLock.Unlock()
+	Log.Println("UpdateRanking", "released Lock")
 	sort.Sort(ranking)
 	current_ranking = ranking[:MinInt(len(ranking), 10)]
 }

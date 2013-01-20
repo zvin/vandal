@@ -27,9 +27,12 @@ func Base64Encode(data string) string {
 }
 
 func SaveAllLocations() {
+	Log.Println("SaveAllLocations", "want Lock")
 	GlobalLock.Lock()
+	Log.Println("SaveAllLocations", "got Lock")
 	defer func() {
 		GlobalLock.Unlock()
+		Log.Println("SaveAllLocations", "released Lock")
 	}()
 	for _, location := range Locations {
 		location.Save()
