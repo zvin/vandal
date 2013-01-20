@@ -30,13 +30,13 @@ func Base64Encode(data string) string {
 }
 
 func SaveAllLocations() {
-	Log.Printf("SaveAllLocations wants locations rlock.")
-	LocationsMutex.RLock()
-	Log.Printf("SaveAllLocations got locations rlock.")
-	defer func() {
-		LocationsMutex.RUnlock()
-		Log.Printf("SaveAllLocations released locations rlock.")
-	}()
+//	Log.Printf("SaveAllLocations wants locations rlock.")
+//	LocationsMutex.RLock()
+//	Log.Printf("SaveAllLocations got locations rlock.")
+//	defer func() {
+//		LocationsMutex.RUnlock()
+//		Log.Printf("SaveAllLocations released locations rlock.")
+//	}()
 	for _, location := range Locations {
 		Log.Printf("SaveAllLocations wants %v lock.", location.Url)
 		location.Mutex.Lock()
