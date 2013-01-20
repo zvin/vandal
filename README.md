@@ -24,16 +24,14 @@ Install dependencies
 Build
 -----
 
- * set the DOMAIN and make:
+ * put the domain you are going to use into the DOMAIN file (defaults to localhost:8000)
+
+ * set the content of the DEBUG file to 'true' or 'false' (true if you want no minification)
+
+ * make:
 
     ```shell
-    DOMAIN=localhost:8000 make
-    ```
-
- * if you do not want the javascript files to be minified, set DEBUG to true:
-
-    ```shell
-    DOMAIN=localhost:8000 DEBUG=true make
+    make
     ```
 
 Run the server

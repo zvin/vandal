@@ -1,5 +1,5 @@
-DOMAIN?=localhost:8000
-DEBUG?=false
+DOMAIN=$(shell cat DOMAIN)
+DEBUG=$(shell cat DEBUG)
 
 CLOSURECOMPILER=compiler.jar
 ifeq ($(wildcard $(CLOSURECOMPILER)),)
@@ -17,12 +17,10 @@ all: $(GOOUT) $(JSOUT) $(HTMLOUT)
 $(GOOUT): $(GOFILES)
 	go build -o $(GOOUT) $(GOFILES)
 
-.PHONY: $(HTMLOUT) $(JSOUT) mrproper
-
-$(HTMLOUT): $(HTMLFILES)
+$(HTMLOUT): $(HTMLFILES) DOMAIN
 	sed 's/DOMAIN_PLACEHOLDER/'$(DOMAIN)'/g' $(HTMLFILES) > $(HTMLOUT)
 
-$(JSOUT): $(JSFILES)
+$(JSOUT): $(JSFILES) DOMAIN DEBUG
 ifeq ($(DEBUG),true)
 	cat $(JSFILES) > $(JSOUT)
 	echo "You sould get google closure-compiler from http://code.google.com/p/closure-compiler/"
@@ -34,4 +32,4 @@ endif
 	sed -i 's/DOMAIN_PLACEHOLDER/'$(DOMAIN)'/g' $(JSOUT)
 
 mrproper:
-	rm $(JSOUT) $(HTMLOUT) $(GOOUT)
+	rm -f $(JSOUT) $(HTMLOUT) $(GOOUT)
