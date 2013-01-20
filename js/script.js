@@ -796,6 +796,10 @@ function create_socket(){
         )
     )
     mySocket.onmessage = function(e){decode_msgpack(e.data)}
+    mySocket.onclose = function(){
+        alert("Connection to the server closed, please reload.")
+        destroy()
+    }
     canvas = create_element("canvas")
     mask_canvas = create_element("canvas")
     canvas.style.position = "absolute"
