@@ -3,46 +3,37 @@ Vandal
 
 eatponies.com source code
 
-Build the server
-----------------
+Install dependencies
+--------------------
 
- * install dependencies:
+ * mandatory:
 
     ```shell
     apt-get install libcairo2-dev
     go get code.google.com/p/go.net/websocket github.com/ugorji/go-msgpack github.com/zvin/gocairo
     go install code.google.com/p/go.net/websocket github.com/ugorji/go-msgpack github.com/zvin/gocairo
-    ```
 
- * build:
-
-    ```shell
-    go build -o vandal *.go
-    ```
-
-
-Create javascript file
-----------------------
-
- * get closure compiler (optionnal, for minification):
+ * optionnal (for javascript minification):
 
     ```shell
     wget http://closure-compiler.googlecode.com/files/compiler-latest.zip
     unzip compiler-latest.zip
     ```
 
- * replace "eatponies.com" with your domain in concat_scripts.sh and template/index.html:
+Build
+-----
+
+ * set the DOMAIN and make:
 
     ```shell
-    sed -i 's/eatponies.com/localhost:8000/g' templates/index.html concat_scripts.sh
+    DOMAIN=localhost:8000 make
     ```
 
- * concatenate scripts:
+ * if you do not want the javascript files to be minified, set DEBUG to true:
 
     ```shell
-    ./concat_scripts.sh
+    DOMAIN=localhost:8000 DEBUG=true make
     ```
-
 
 Run the server
 --------------
