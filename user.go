@@ -68,6 +68,15 @@ func (user *User) SendEvent(event []interface{}) {
 	}
 }
 
+func (user *User) SendImage(bytes []byte) {
+	err := websocket.Message.Send(user.Socket, bytes)
+	if err != nil {
+		Log.Printf("Couldn't send image to %d: %v\n", user.UserId, err)
+		user.Socket.Close()
+	}
+}
+
+
 func (user *User) Error(description string) {
 	user.SendEvent([]interface{}{
 		EventTypeError,
@@ -191,9 +200,10 @@ func (user *User) OnOpen() {
 	// Send the image of this url to the new user:
 	user.SendEvent([]interface{}{
 		EventTypeWelcome,
-		user.Location.GetB64Image(),
 		user.Location.GetDelta(),
 	})
+	// Send the image without packing it in msgpack
+	user.SendImage(user.Location.GetImageBytes())
 	// Send this new user to other users:
 	event := []interface{}{
 		EventTypeJoin,

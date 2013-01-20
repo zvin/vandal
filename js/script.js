@@ -221,47 +221,12 @@ function draw_line(x1, y1, x2, y2, duration, red, green, blue, use_pen, context)
     context.closePath()
 }
 
-function copy_img_in_canvas(b64data){
+function copy_img_in_canvas(blob_id){
     var img = new Image()
-    img.src = "data:image/png;base64," + b64data;
+    img.src = blob_id;
     img.onload = function(){
         ctx.drawImage(img, 0, 0)
     }
-}
-
-//function rawStringToBuffer( str ) {
-//    var idx, len = str.length, arr = new Array( len );
-//    for ( idx = 0 ; idx < len ; ++idx ) {
-//        arr[ idx ] = str.charCodeAt(idx) & 0xFF;
-//    }
-//    // You may create an ArrayBuffer from a standard array (of values) as follows:
-//    return new Uint8Array( arr ).buffer;
-//}
-
-
-//function str2ab(str) {
-//    var buf = new ArrayBuffer(str.length) // 2 bytes for each char
-//    var bufView = new Uint8Array(buf)
-//    for (var i=0, strLen=str.length; i<strLen; i++) {
-//      bufView[i] = str.charCodeAt(i)
-//    }
-//    return buf
-//}
-
-
-function copy_img_in_canvas2(blob){
-    var reader = new FileReader()
-    reader.onloadend = function() {
-        var img = new Image()
-//        console.log(reader.result)
-        img.src = reader.result
-        img.onload = function(){
-            ctx.drawImage(img, 0, 0)
-        }
-    }
-//    window.original = blob
-//    window.lolz = rawStringToBuffer(blob)
-    reader.readAsDataURL(Blob([Uint8Array(blob).buffer], {"type": "image/png"}))
 }
 
 function draw_delta(lines){
@@ -309,8 +274,7 @@ function gotmessage(event){
     }else if (type == EventType.chat_message){
         add_chat_message(user.get_label(), event[0])
     }else if (type == EventType.welcome){
-        copy_img_in_canvas(event[0]) // image
-        draw_delta(event[1])         // delta
+        draw_delta(event[0])         // delta
     }else if (type == EventType.change_nickname){
         user.change_nickname.apply(user, event)
     }
@@ -753,6 +717,14 @@ function mask_shift(){
     //cpt++
 }
 
+function is_png(bytes) {
+    return ((bytes[0] == 137) && (bytes[1] == 80) && (bytes[2] == 78))
+}
+
+function gotimage(blob) {
+    copy_img_in_canvas(URL.createObjectURL(blob))
+}
+
 function decode_msgpack(data){
     // Reading a blob is an async operation but we want to keep the messages in
     // order, so we have a queue of incoming messages and we decode them one at
@@ -762,7 +734,12 @@ function decode_msgpack(data){
         var reader = new FileReader()
         reader.onloadend = function(evt) {
             if (evt.target.readyState == FileReader.DONE) {
-                gotmessage(msgpack.unpack(evt.target.result))
+                var bytes = new Uint8Array(evt.target.result)
+                if (is_png(bytes)) {
+                    gotimage(current_blob)
+                } else {
+                    gotmessage(msgpack.unpack(bytes))
+                }
                 if (incoming_blobs.length > 0){
                     decode()
                 } else {
@@ -770,7 +747,8 @@ function decode_msgpack(data){
                 }
             }
         }
-        reader.readAsBinaryString(incoming_blobs.shift());
+        var current_blob = incoming_blobs.shift()
+        reader.readAsArrayBuffer(current_blob);
     }
     incoming_blobs.push(data)
     if (!is_decoding){
