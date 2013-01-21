@@ -26,12 +26,7 @@ var Log *log.Logger
 
 func sendRecvServer(ws *websocket.Conn) {
 	save_wait.Add(1)
-	Log.Println("NewUser", "want Lock")
-	GlobalLock.Lock()
-	Log.Println("NewUser", "got Lock")
 	user := NewUser(ws)
-	GlobalLock.Unlock()
-	Log.Println("NewUser", "released Lock")
 	if user == nil {
 		save_wait.Done()
 		return

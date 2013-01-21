@@ -26,6 +26,13 @@ type User struct {
 }
 
 func NewUser(ws *websocket.Conn) *User {
+	Log.Println("NewUser", "want Lock")
+	GlobalLock.Lock()
+	Log.Println("NewUser", "got Lock")
+	defer func() {
+		GlobalLock.Unlock()
+		Log.Println("NewUser", "released Lock")
+	}()
 	UserCount += 1
 	user := new(User)
 	user.Socket = ws
