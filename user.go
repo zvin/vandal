@@ -72,16 +72,6 @@ func EncodeEvent(event []interface{}) []byte {
 	return result
 }
 
-func (user *User) SendEvent(event []interface{}) {
-	//    fmt.Printf("sending %v\n", event)
-	//    fmt.Printf("sending %v to %d %#v\n", EncodeEvent(event), user.UserId, user.Socket)
-	err := websocket.Message.Send(user.Socket, EncodeEvent(event))
-	if err != nil {
-		Log.Printf("Couldn't send to %d: %v\n", user.UserId, err)
-		user.Socket.Close()
-	}
-}
-
 func (user *User) SendImage(bytes []byte) {
 	if len(bytes) == 0 {
 		return
