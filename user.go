@@ -5,6 +5,7 @@ import (
 	"github.com/ugorji/go-msgpack"
 	"net/url"
 	"reflect"
+	"errors"
 )
 
 const MAX_USERS_PER_LOCATION = 20
@@ -33,22 +34,33 @@ func NewUser(ws *websocket.Conn) *User {
 		GlobalLock.Unlock()
 		Log.Println("NewUser", "released Lock")
 	}()
+	Log.Println("NewUser", "1")
 	UserCount += 1
 	user := new(User)
+	Log.Println("NewUser", "2")
 	user.Socket = ws
 	user.UserId = UserCount
 	location_url, err := url.QueryUnescape(ws.Request().RequestURI[6:])
+	Log.Println("NewUser", "3")
 	if err != nil {
+		Log.Println("NewUser", "panic")
 		panic(err)
 	}
+	Log.Println("NewUser", "4")
 	user.Location = GetLocation(location_url)
+	Log.Println("NewUser", "5")
 	if len(user.Location.Users) >= MAX_USERS_PER_LOCATION {
+		Log.Println("NewUser", "too much")
 		user.Error("Too much users at this location, try adding #something at the end of the URL.")
 		return nil
 	}
+	Log.Println("NewUser", "6")
 	user.Location.AddUser(user)
+	Log.Println("NewUser", "7")
 	user.UsePen = true
+	Log.Println("NewUser", "8")
 	user.OnOpen()
+	Log.Println("NewUser", "9")
 	return user
 }
 
@@ -142,25 +154,36 @@ func (user *User) ChangeNickname(nickname string) {
 	user.Nickname = nickname
 }
 
-func ToInt(n interface{}) (result int) {
+func ToInt(n interface{}) (result int, err error) {
 	switch n.(type) {
 	case int, int8, int16, int32, int64:
 		result = int(reflect.ValueOf(n).Int())
 	case uint, uint8, uint16, uint32, uint64:
 		result = int(reflect.ValueOf(n).Uint())
 	default:
-		Log.Printf("not an int: %#v ", n)
-		panic("not an int!")
+		Log.Printf("ToInt, not an int: %#v ", n)
+		err = errors.New("Not an int")
 	}
-	return result
+	return result, err
 }
 
 func (user *User) GotMessage(event []interface{}) {
-	event_type := ToInt(event[0])
+	event_type, err := ToInt(event[0])
+	if err != nil{
+		user.Socket.Close()
+		return
+	}
 	params := event[1:]
 	switch event_type {
 	case EventTypeMouseMove:
-		user.MouseMove(ToInt(params[0]), ToInt(params[1]), ToInt(params[2]))
+		p0, err0 := ToInt(params[0])
+		p1, err1 := ToInt(params[1])
+		p2, err2 := ToInt(params[2])
+		if err0 != nil || err1 != nil || err2 != nil {
+			user.Socket.Close()
+			return
+		}
+		user.MouseMove(p0, p1, p2)
 	case EventTypeMouseUp:
 		user.MouseUp()
 	case EventTypeMouseDown:
@@ -168,7 +191,14 @@ func (user *User) GotMessage(event []interface{}) {
 	case EventTypeChangeTool:
 		user.ChangeTool(params[0].(int8) != 0)
 	case EventTypeChangeColor:
-		user.ChangeColor(ToInt(params[0]), ToInt(params[1]), ToInt(params[2]))
+		p0, err0 := ToInt(params[0])
+		p1, err1 := ToInt(params[1])
+		p2, err2 := ToInt(params[2])
+		if err0 != nil || err1 != nil || err2 != nil {
+			user.Socket.Close()
+			return
+		}
+		user.ChangeColor(p0, p1, p2)
 	case EventTypeChangeNickname:
 		user.ChangeNickname(params[0].(string))
 	}
