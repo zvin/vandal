@@ -67,6 +67,7 @@ func NewUser(ws *websocket.Conn) *User {
 func EncodeEvent(event []interface{}) []byte {
 	result, err := msgpack.Marshal(event)
 	if err != nil {
+		Log.Printf("Couldn't encode event '%v' for user %d\n", event, user.UserId)
 		panic(err)
 	}
 	return result
