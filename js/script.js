@@ -274,7 +274,7 @@ function gotmessage(event){
     }else if (type == EventType.chat_message){
         add_chat_message(user.get_label(), event[0])
     }else if (type == EventType.welcome){
-        copy_img_in_canvas("/" + event[0])  // image url
+        copy_img_in_canvas("http://" + DOMAIN + "/" + event[0])  // image url
         draw_delta(event[1])                // delta
         set_loading_off()
     }else if (type == EventType.change_nickname){
