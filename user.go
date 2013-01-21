@@ -189,11 +189,10 @@ func (user *User) OnOpen() {
 			other.UsePen,
 		})
 	}
-	// Send the image without packing it in msgpack to the new user:
-	user.SendImage(user.Location.GetImageBytes())
 	// Send the delta between the image and now to the new user:
 	user.SendEvent([]interface{}{
 		EventTypeWelcome,
+		user.Location.FileName,
 		user.Location.GetDelta(),
 	})
 	// Send this new user to other users:
