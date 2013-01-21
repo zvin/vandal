@@ -10,6 +10,7 @@ events:
    )
  * 2 leave(user_id: int)                                          [only server -> browser]
  * 3 welcome(                                                     [only server -> browser]
+    image_url    : string
     delta: list of [
         x1       : int,
         y1       : int,

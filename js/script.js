@@ -274,7 +274,8 @@ function gotmessage(event){
     }else if (type == EventType.chat_message){
         add_chat_message(user.get_label(), event[0])
     }else if (type == EventType.welcome){
-        draw_delta(event[0])         // delta
+        copy_img_in_canvas("/" + event[0])  // image url
+        draw_delta(event[1])                // delta
         set_loading_off()
     }else if (type == EventType.change_nickname){
         user.change_nickname.apply(user, event)
@@ -750,14 +751,6 @@ function mask_shift(){
     //cpt++
 }
 
-function is_png(bytes) {
-    return ((bytes[0] == 137) && (bytes[1] == 80) && (bytes[2] == 78))
-}
-
-function gotimage(blob) {
-    copy_img_in_canvas(URL.createObjectURL(blob))
-}
-
 function decode_msgpack(data){
     // Reading a blob is an async operation but we want to keep the messages in
     // order, so we have a queue of incoming messages and we decode them one at
@@ -768,11 +761,7 @@ function decode_msgpack(data){
         reader.onloadend = function(evt) {
             if (evt.target.readyState == FileReader.DONE) {
                 var bytes = new Uint8Array(evt.target.result)
-                if (is_png(bytes)) {
-                    gotimage(current_blob)
-                } else {
-                    gotmessage(msgpack.unpack(bytes))
-                }
+                gotmessage(msgpack.unpack(bytes))
                 if (incoming_blobs.length > 0){
                     decode()
                 } else {
@@ -780,8 +769,7 @@ function decode_msgpack(data){
                 }
             }
         }
-        var current_blob = incoming_blobs.shift()
-        reader.readAsArrayBuffer(current_blob);
+        reader.readAsArrayBuffer(incoming_blobs.shift());
     }
     incoming_blobs.push(data)
     if (!is_decoding){

@@ -155,6 +155,7 @@ func main() {
 
 	http.Handle("/ws", websocket.Handler(sendRecvServer))
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	http.Handle("/img/", http.StripPrefix("/img/", http.FileServer(http.Dir("img"))))
 	http.Handle("/", http.HandlerFunc(IndexHandler))
 	Log.Printf("Listening on http://localhost:%d/\n", *port)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
