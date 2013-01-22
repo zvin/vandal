@@ -43,6 +43,7 @@ type Location struct {
 	Url      string
 	Users    []*User
 	FileName string
+	chatFileName string
 	Chat     *MessagesLog
 	Surface  *cairo.Surface
 	delta    []interface{}
@@ -73,10 +74,12 @@ func NewLocation(url string) *Location {
 	loc := new(Location)
 	loc.Url = url
 	Locations[url] = loc
-	loc.Chat = NewMessagesLog()
 	b64fname := Base64Encode(url)
 	b64fname = b64fname[:MinInt(len(b64fname), 251)]
-	loc.FileName = "img/" + strings.Replace(b64fname, "/", "_", -1) + ".png" // filename
+	b64fname = strings.Replace(b64fname, "/", "_", -1)
+	loc.chatFileName = "chat/" + b64fname + ".gob"
+	loc.Chat = OpenMessagesLog(loc.chatFileName)
+	loc.FileName = "img/" + b64fname + ".png" // filename
 	Log.Printf("filename: %v", loc.FileName)
 	loc.Surface = cairo.NewSurfaceFromPNG(loc.FileName)
 	if loc.Surface.SurfaceStatus() != 0 {
@@ -151,6 +154,7 @@ func (location *Location) Save() {
 		location.Surface.WriteToPNG(location.FileName) // Output to PNG
 		location.delta = nil
 	}
+	location.Chat.Save()
 }
 
 func Remove(list []*User, value *User) []*User {

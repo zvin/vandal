@@ -40,7 +40,7 @@ Run the server
  * create necessary folders:
 
     ```shell
-    mkdir log img
+    mkdir log img chat
     ```
 
  * run the server
