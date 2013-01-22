@@ -142,7 +142,12 @@ func (user *User) ChangeColor(red, green, blue int) {
 }
 
 func (user *User) ChangeNickname(nickname string) {
+	user.Location.Chat.AddMessage("", user.Nickname + " is now known as " + nickname)
 	user.Nickname = nickname
+}
+
+func (user *User) ChatMessage(msg string) {
+	user.Location.Chat.AddMessage(user.Nickname, msg)
 }
 
 func ToInt(n interface{}) (result int, err error) {
@@ -192,6 +197,8 @@ func (user *User) GotMessage(event []interface{}) {
 		user.ChangeColor(p0, p1, p2)
 	case EventTypeChangeNickname:
 		user.ChangeNickname(params[0].(string))
+	case EventTypeChatMessage:
+		user.ChatMessage(params[0].(string))
 	}
 	user.Broadcast(event, true)
 }
@@ -215,6 +222,7 @@ func (user *User) OnOpen() {
 		EventTypeWelcome,
 		user.Location.FileName,
 		user.Location.GetDelta(),
+		user.Location.Chat.GetMessages(),
 	})
 	// Send this new user to other users:
 	event := []interface{}{

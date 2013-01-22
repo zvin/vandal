@@ -22,6 +22,10 @@ events:
         blue     : int,
         use_pen  : bool
     ]
+    messages: list of [
+        nickname : string,
+        message  : string
+    ]
    )
  * 4 change_color(user_id: int, red: int, green: int, blue: int)
  * 5 change_tool(user_id: int, use_pen: bool)                     [use_pen=1: pen; use_pen=0: eraser]

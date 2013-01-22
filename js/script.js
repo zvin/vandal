@@ -275,10 +275,22 @@ function gotmessage(event){
         add_chat_message(user.get_label(), event[0])
     }else if (type == EventType.welcome){
         copy_img_in_canvas("http://" + DOMAIN + "/" + event[0])  // image url
-        draw_delta(event[1])                // delta
+        draw_delta(event[1])                                     // delta
+        display_chat_log(event[2])                               // chat history
         set_loading_off()
     }else if (type == EventType.change_nickname){
         user.change_nickname.apply(user, event)
+    }
+}
+
+function display_chat_log(messages) {
+    if (messages == null) return
+    for(var i=0; i<messages.length; i++) {
+        if (messages[i][0] == "") {
+            add_chat_notification(messages[i][1])
+        } else {
+            add_chat_message(messages[i][0], messages[i][1])
+        }
     }
 }
 

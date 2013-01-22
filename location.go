@@ -43,6 +43,7 @@ type Location struct {
 	Url      string
 	Users    []*User
 	FileName string
+	Chat     *MessagesLog
 	Surface  *cairo.Surface
 	delta    []interface{}
 }
@@ -72,6 +73,7 @@ func NewLocation(url string) *Location {
 	loc := new(Location)
 	loc.Url = url
 	Locations[url] = loc
+	loc.Chat = NewMessagesLog()
 	b64fname := Base64Encode(url)
 	b64fname = b64fname[:MinInt(len(b64fname), 251)]
 	loc.FileName = "img/" + strings.Replace(b64fname, "/", "_", -1) + ".png" // filename
