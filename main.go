@@ -7,6 +7,7 @@ import (
 	"github.com/ugorji/go-msgpack"
 	"net/http"
 	"os"
+	"io"
 	"os/signal"
 	"sort"
 	"sync"
@@ -17,6 +18,7 @@ import (
 
 var GlobalLock sync.Mutex
 var port *int = flag.Int("p", 8000, "Port to listen.")
+var foreground *bool = flag.Bool("f", false, "Log on stdout.")
 var sockets map[int]*websocket.Conn
 var sockets_lock sync.Mutex
 var save_wait sync.WaitGroup
@@ -83,12 +85,19 @@ func SignalHandler(c chan os.Signal) {
 }
 
 func init() {
+	flag.Parse()
 	sockets = make(map[int]*websocket.Conn)
 	now := time.Now()
-	log_file, err := os.Create(now.Format("log/2006-01-02_15:04:05"))
-	if err != nil {
-		fmt.Println(err)
-		panic("Couldn't open log file.")
+	var log_file io.Writer
+	var err error
+	if *foreground == true {
+		log_file = os.Stdout
+	} else {
+		log_file, err = os.Create(now.Format("log/2006-01-02_15:04:05"))
+		if err != nil {
+			fmt.Println(err)
+			panic("Couldn't open log file.")
+		}
 	}
 	Log = log.New(log_file, "", log.LstdFlags)
 }
@@ -134,7 +143,6 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	flag.Parse()
 	SignalChan := make(chan os.Signal)
 	go SignalHandler(SignalChan)
 	signal.Notify(SignalChan, os.Interrupt, os.Kill)
