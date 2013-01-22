@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"reflect"
 	"errors"
+	"strconv"
 )
 
 const MAX_USERS_PER_LOCATION = 20
@@ -40,6 +41,7 @@ func NewUser(ws *websocket.Conn) *User {
 	Log.Println("NewUser", "2")
 	user.Socket = ws
 	user.UserId = UserCount
+	user.Nickname = strconv.Itoa(user.UserId)
 	location_url, err := url.QueryUnescape(ws.Request().RequestURI[6:])
 	Log.Println("NewUser", "3")
 	if err != nil {
