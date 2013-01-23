@@ -141,13 +141,13 @@ func (user *User) ChangeColor(red, green, blue int) {
 	user.ColorBlue = blue
 }
 
-func (user *User) ChangeNickname(nickname string) {
-	user.Location.Chat.AddMessage("", user.Nickname + " is now known as " + nickname)
+func (user *User) ChangeNickname(nickname string, timestamp int64) {
+	user.Location.Chat.AddMessage(timestamp, "", user.Nickname + " is now known as " + nickname)
 	user.Nickname = nickname
 }
 
-func (user *User) ChatMessage(msg string) {
-	user.Location.Chat.AddMessage(user.Nickname, msg)
+func (user *User) ChatMessage(msg string, timestamp int64) {
+	user.Location.Chat.AddMessage(timestamp, user.Nickname, msg)
 }
 
 func ToInt(n interface{}) (result int, err error) {
@@ -196,15 +196,20 @@ func (user *User) GotMessage(event []interface{}) {
 		}
 		user.ChangeColor(p0, p1, p2)
 	case EventTypeChangeNickname:
-		user.ChangeNickname(params[0].(string))
+		timestamp := Timestamp()
+		user.ChangeNickname(params[0].(string), timestamp)
+		event = append(event, timestamp)
 	case EventTypeChatMessage:
-		user.ChatMessage(params[0].(string))
+		timestamp := Timestamp()
+		user.ChatMessage(params[0].(string), timestamp)
+		event = append(event, timestamp)
 	}
 	user.Broadcast(event, true)
 }
 
 func (user *User) OnOpen() {
 	// Send the list of present users to this user:
+	timestamp := Timestamp()
 	for _, other := range user.Location.Users {
 		user.SendEvent([]interface{}{
 			EventTypeJoin,
@@ -215,6 +220,7 @@ func (user *User) OnOpen() {
 			false, // not you
 			other.Nickname,
 			other.UsePen,
+			0, // no timestamp
 		})
 	}
 	// Send the delta between the image and now to the new user:
@@ -233,6 +239,7 @@ func (user *User) OnOpen() {
 		false, // not you
 		user.Nickname,
 		user.UsePen,
+		timestamp,
 	}
 	user.Broadcast(event, false)
 	// Send this user to himself
@@ -245,11 +252,15 @@ func (user *User) OnOpen() {
 		true, // you
 		user.Nickname,
 		user.UsePen,
+		timestamp,
 	}
 	user.SendEvent(event)
+	user.Location.Chat.AddMessage(timestamp, "", "user " + user.Nickname + " joined")
 }
 
 func (user *User) OnClose() {
-	user.Broadcast([]interface{}{EventTypeLeave}, true)
+	timestamp := Timestamp()
+	user.Broadcast([]interface{}{EventTypeLeave, timestamp}, true)
+	user.Location.Chat.AddMessage(timestamp, "", "user " + user.Nickname + " left")
 	user.Location.RemoveUser(user)
 }

@@ -6,9 +6,10 @@ events:
     mouse_is_down: bool,
     you          : bool,
     nickname     : char[10],
-    use_pen      : bool
+    use_pen      : bool,
+    timestamp    : int
    )
- * 2 leave(user_id: int)                                          [only server -> browser]
+ * 2 leave(user_id: int, timestamp: int)                          [only server -> browser]
  * 3 welcome(                                                     [only server -> browser]
     image_url    : string
     delta: list of [
@@ -23,6 +24,7 @@ events:
         use_pen  : bool
     ]
     messages: list of [
+        timestamp: int
         nickname : string,
         message  : string
     ]
@@ -32,8 +34,10 @@ events:
  * 6 mouse_move(user_id: int, x: int, y: int, duration: int)
  * 7 mouse_up(user_id: int)
  * 8 mouse_down(user_id: int)
- * 9 chat_message(user_id: int, message: char)
- * 10 change_nickname(user_id: int, nickname: char)
+ * 9 chat_message(user_id: int, message: char)                      [client -> server]
+ * 9 chat_message(user_id: int, message: char, timestamp: int)      [server -> client] <==> the server adds a timestamp to the message before broadcasting it to everyone
+ * 10 change_nickname(user_id: int, nickname: char)                 [client -> server]
+ * 10 change_nickname(user_id: int, nickname: char, timestamp: int) [server -> client] <==> the server adds a timestamp to the message before broadcasting it to everyone
 
 
 message structure:

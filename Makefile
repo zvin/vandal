@@ -6,7 +6,7 @@ ifeq ($(wildcard $(CLOSURECOMPILER)),)
 	DEBUG=true
 endif
 GOOUT=vandal
-GOFILES=eventtype.go location.go main.go user.go messageslog.go
+GOFILES=eventtype.go location.go main.go user.go messageslog.go utils.go
 JSOUT=static/script.js
 JSFILES=js/jscolor.js js/msgpack.js js/script.js
 HTMLOUT=templates/index.html

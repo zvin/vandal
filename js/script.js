@@ -110,8 +110,8 @@ function User(user_id, position, color, mouse_is_down, it_is_me, nickname, use_p
         this.use_pen = use_pen
     }
 
-    this.change_nickname = function(nickname){
-        add_chat_notification(this.get_label() + " is now known as " + nickname)
+    this.change_nickname = function(nickname, timestamp){
+        add_chat_notification(this.get_label() + " is now known as " + nickname, timestamp)
         this.nickname = nickname
         if (this.it_is_me){
             nickname_span.removeChild(nickname_span.firstChild)
@@ -259,7 +259,11 @@ function gotmessage(event){
             event[4], // nickname
             event[5]  // use_pen
         )
+        if (event[6] != 0) {
+            add_chat_notification("user " + event[4] + " joined ", event[6])
+        }
     }else if (type == EventType.leave){
+        add_chat_notification("user " + user.nickname + " left ", event[0])
         user.destroy()
     }else if (type == EventType.mouse_up){
         user.mouse_up()
@@ -272,7 +276,7 @@ function gotmessage(event){
     }else if (type == EventType.change_tool){
         user.change_tool.apply(user, event)
     }else if (type == EventType.chat_message){
-        add_chat_message(user.get_label(), event[0])
+        add_chat_message(user.get_label(), event[0], event[1])
     }else if (type == EventType.welcome){
         copy_img_in_canvas("http://" + DOMAIN + "/" + event[0])  // image url
         draw_delta(event[1])                                     // delta
@@ -287,9 +291,9 @@ function display_chat_log(messages) {
     if (messages == null) return
     for(var i=0; i<messages.length; i++) {
         if (messages[i][0] == "") {
-            add_chat_notification(messages[i][1])
+            add_chat_notification(messages[i][1], messages[i][2])
         } else {
-            add_chat_message(messages[i][0], messages[i][1])
+            add_chat_message(messages[i][0], messages[i][1], messages[i][2])
         }
     }
 }
@@ -602,7 +606,11 @@ function create_chat_window(){
     document.body.appendChild(chat_div)
 }
 
-function add_chat_message(username, msg){
+function format_time(timestamp){
+    return (new Date(timestamp * 1000)).toLocaleString()
+}
+
+function add_chat_message(username, msg, timestamp){
     var p    = create_element("p"),
         span = create_element("span")
     p.style.marginTop = "10px"
@@ -610,14 +618,16 @@ function add_chat_message(username, msg){
     span.appendChild(document.createTextNode(username))
     p.appendChild(span)
     p.appendChild(document.createTextNode(" : " + msg))
+    p.title = format_time(timestamp)
     add_message(p)
 }
 
-function add_chat_notification(msg){
+function add_chat_notification(msg, timestamp){
     var p = create_element("p")
     p.style.fontStyle = "italic"
     p.style.marginTop = "10px"
     p.appendChild(document.createTextNode(msg))
+    p.title = format_time(timestamp)
     add_message(p)
 }
 

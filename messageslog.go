@@ -10,6 +10,7 @@ const (
 )
 
 type Message struct {
+	Timestamp int64
 	Nickname string
 	Message string
 }
@@ -30,20 +31,21 @@ func OpenMessagesLog(filename string) *MessagesLog {
 	return result
 }
 
-func (chat *MessagesLog) AddMessage(nickname string, msg string) {
+func (chat *MessagesLog) AddMessage(timestamp int64, nickname string, msg string) {
 	chat.dirty = true
 	if len(chat.Messages) == MAX_MESSAGES_PER_CHAT {
 		chat.Messages = chat.Messages[1:]
 	}
 	message := new(Message)
+	message.Timestamp = timestamp
 	message.Nickname = nickname
 	message.Message = msg
 	chat.Messages = append(chat.Messages, message)
 }
 
-func (chat *MessagesLog) GetMessages() (result [][2]string) {
+func (chat *MessagesLog) GetMessages() (result [][3]interface{}) {
 	for _, message := range chat.Messages {
-		result = append(result, [2]string{message.Nickname, message.Message})
+		result = append(result, [3]interface{}{message.Nickname, message.Message, message.Timestamp})
 	}
 	return result
 }
