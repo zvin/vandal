@@ -166,7 +166,7 @@ func ToInt(n interface{}) (result int, err error) {
 func (user *User) GotMessage(event []interface{}) {
 	event_type, err := ToInt(event[0])
 	if err != nil{
-		user.Socket.Close()
+		user.Error("Invalid event type")
 		return
 	}
 	params := event[1:]
@@ -176,7 +176,7 @@ func (user *User) GotMessage(event []interface{}) {
 		p1, err1 := ToInt(params[1])
 		p2, err2 := ToInt(params[2])
 		if err0 != nil || err1 != nil || err2 != nil {
-			user.Socket.Close()
+			user.Error("Invalid mouse move")
 			return
 		}
 		user.MouseMove(p0, p1, p2)
@@ -191,7 +191,7 @@ func (user *User) GotMessage(event []interface{}) {
 		p1, err1 := ToInt(params[1])
 		p2, err2 := ToInt(params[2])
 		if err0 != nil || err1 != nil || err2 != nil {
-			user.Socket.Close()
+			user.Error("Invalid color")
 			return
 		}
 		user.ChangeColor(p0, p1, p2)
