@@ -85,6 +85,9 @@ func SignalHandler(c chan os.Signal) {
 }
 
 func init() {
+	os.MkdirAll("chat", os.ModeDir)
+	os.MkdirAll("img", os.ModeDir)
+	os.MkdirAll("log", os.ModeDir)
 	flag.Parse()
 	sockets = make(map[int]*websocket.Conn)
 	now := time.Now()

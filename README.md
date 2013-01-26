@@ -37,19 +37,15 @@ Build
 Run the server
 --------------
 
- * create necessary folders:
-
-    ```shell
-    mkdir log img chat
-    ```
-
  * run the server
 
     ```shell
-    ./vandal -p 8000
+    cd build
+    ./vandal -p 8000 -f
     ```
 
  * open your browser at http://localhost:8000
+ * -f means print the logs on stdout
 
 License
 -------
