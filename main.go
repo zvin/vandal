@@ -103,7 +103,7 @@ func init() {
 	if *foreground == true {
 		log_file = os.Stdout
 	} else {
-		log_file, err = os.Create(now.Format("log/2006-01-02_15:04:05"))
+		log_file, err = os.Create(LOG_DIR + "/" + now.Format("2006-01-02_15:04:05"))
 		if err != nil {
 			fmt.Println(err)
 			panic("Couldn't open log file.")
