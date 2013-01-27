@@ -2,10 +2,10 @@ package main
 
 import (
 	"code.google.com/p/go.net/websocket"
+	"errors"
 	"github.com/ugorji/go-msgpack"
 	"net/url"
 	"reflect"
-	"errors"
 	"strconv"
 )
 
@@ -142,7 +142,7 @@ func (user *User) ChangeColor(red, green, blue int) {
 }
 
 func (user *User) ChangeNickname(nickname string, timestamp int64) {
-	user.Location.Chat.AddMessage(timestamp, "", user.Nickname + " is now known as " + nickname)
+	user.Location.Chat.AddMessage(timestamp, "", user.Nickname+" is now known as "+nickname)
 	user.Nickname = nickname
 }
 
@@ -165,7 +165,7 @@ func ToInt(n interface{}) (result int, err error) {
 
 func (user *User) GotMessage(event []interface{}) {
 	event_type, err := ToInt(event[0])
-	if err != nil{
+	if err != nil {
 		user.Error("Invalid event type")
 		return
 	}
@@ -255,12 +255,12 @@ func (user *User) OnOpen() {
 		timestamp,
 	}
 	user.SendEvent(event)
-	user.Location.Chat.AddMessage(timestamp, "", "user " + user.Nickname + " joined")
+	user.Location.Chat.AddMessage(timestamp, "", "user "+user.Nickname+" joined")
 }
 
 func (user *User) OnClose() {
 	timestamp := Timestamp()
 	user.Broadcast([]interface{}{EventTypeLeave, timestamp}, true)
-	user.Location.Chat.AddMessage(timestamp, "", "user " + user.Nickname + " left")
+	user.Location.Chat.AddMessage(timestamp, "", "user "+user.Nickname+" left")
 	user.Location.RemoveUser(user)
 }

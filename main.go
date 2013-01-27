@@ -5,15 +5,15 @@ import (
 	"flag"
 	"fmt"
 	"github.com/ugorji/go-msgpack"
+	"html/template"
+	"io"
+	"log"
 	"net/http"
 	"os"
-	"io"
 	"os/signal"
 	"sort"
 	"sync"
-	"html/template"
 	"time"
-	"log"
 )
 
 var GlobalLock sync.Mutex
@@ -106,22 +106,22 @@ func init() {
 }
 
 type Website struct {
-	Url string
+	Url       string
 	UserCount int
 }
 
 type Ranking []Website
 
 func (r Ranking) Len() int {
-    return len(r)
+	return len(r)
 }
 
 func (r Ranking) Less(i, j int) bool {
-    return r[i].UserCount > r[j].UserCount  // we went it in the reverse order
+	return r[i].UserCount > r[j].UserCount // we went it in the reverse order
 }
 
 func (r Ranking) Swap(i, j int) {
-    r[i], r[j] = r[j], r[i]
+	r[i], r[j] = r[j], r[i]
 }
 
 func UpdateRanking() {

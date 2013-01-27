@@ -4,6 +4,6 @@ import (
 	"time"
 )
 
-func Timestamp() int64{
+func Timestamp() int64 {
 	return time.Now().Unix()
 }

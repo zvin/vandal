@@ -11,14 +11,14 @@ const (
 
 type Message struct {
 	Timestamp int64
-	Nickname string
-	Message string
+	Nickname  string
+	Message   string
 }
 
 type MessagesLog struct {
 	Messages []*Message
 	filename string
-	dirty bool
+	dirty    bool
 }
 
 func OpenMessagesLog(filename string) *MessagesLog {

@@ -15,7 +15,7 @@ const (
 )
 
 var (
-	Locations      map[string]*Location
+	Locations map[string]*Location
 )
 
 func Base64Encode(data string) string {
@@ -40,13 +40,13 @@ func SaveAllLocations() {
 }
 
 type Location struct {
-	Url      string
-	Users    []*User
-	FileName string
+	Url          string
+	Users        []*User
+	FileName     string
 	chatFileName string
-	Chat     *MessagesLog
-	Surface  *cairo.Surface
-	delta    []interface{}
+	Chat         *MessagesLog
+	Surface      *cairo.Surface
+	delta        []interface{}
 }
 
 func init() {
