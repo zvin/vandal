@@ -16,6 +16,13 @@ import (
 	"time"
 )
 
+const (
+	CHAT_DIR   = "chat"
+	IMAGES_DIR = "img"
+	LOG_DIR    = "log"
+	STATIC_DIR = "static"
+)
+
 var GlobalLock sync.Mutex
 var port *int = flag.Int("p", 8000, "Port to listen.")
 var foreground *bool = flag.Bool("f", false, "Log on stdout.")
@@ -85,9 +92,9 @@ func SignalHandler(c chan os.Signal) {
 }
 
 func init() {
-	os.MkdirAll("chat", 0777)
-	os.MkdirAll("img", 0777)
-	os.MkdirAll("log", 0777)
+	os.MkdirAll(CHAT_DIR, 0777)
+	os.MkdirAll(IMAGES_DIR, 0777)
+	os.MkdirAll(LOG_DIR, 0777)
 	flag.Parse()
 	sockets = make(map[int]*websocket.Conn)
 	now := time.Now()
@@ -165,8 +172,8 @@ func main() {
 	}()
 
 	http.Handle("/ws", websocket.Handler(sendRecvServer))
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-	http.Handle("/img/", http.StripPrefix("/img/", http.FileServer(http.Dir("img"))))
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(STATIC_DIR))))
+	http.Handle("/img/", http.StripPrefix("/img/", http.FileServer(http.Dir(IMAGES_DIR))))
 	http.Handle("/", http.HandlerFunc(IndexHandler))
 	Log.Printf("Listening on http://localhost:%d/\n", *port)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)

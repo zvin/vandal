@@ -63,13 +63,6 @@ func GetLocation(url string) *Location {
 	return location
 }
 
-func MinInt(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 func NewLocation(url string) *Location {
 	loc := new(Location)
 	loc.Url = url
@@ -77,9 +70,9 @@ func NewLocation(url string) *Location {
 	b64fname := Base64Encode(url)
 	b64fname = b64fname[:MinInt(len(b64fname), 251)]
 	b64fname = strings.Replace(b64fname, "/", "_", -1)
-	loc.chatFileName = "chat/" + b64fname + ".gob"
+	loc.chatFileName = CHAT_DIR + "/" + b64fname + ".gob"
 	loc.Chat = OpenMessagesLog(loc.chatFileName)
-	loc.FileName = "img/" + b64fname + ".png" // filename
+	loc.FileName = IMAGES_DIR + "/" + b64fname + ".png" // filename
 	Log.Printf("filename: %v", loc.FileName)
 	loc.Surface = cairo.NewSurfaceFromPNG(loc.FileName)
 	if loc.Surface.SurfaceStatus() != 0 {
