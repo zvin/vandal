@@ -26,8 +26,6 @@ var (
 	GlobalLock     sync.Mutex
 	port           *int  = flag.Int("p", 8000, "Port to listen.")
 	foreground     *bool = flag.Bool("f", false, "Log on stdout.")
-	sockets        map[int]*websocket.Conn
-	sockets_lock   sync.Mutex
 	save_wait      sync.WaitGroup
 	index_template = template.Must(template.ParseFiles("templates/index.html"))
 	Log            *log.Logger
@@ -40,9 +38,6 @@ func sendRecvServer(ws *websocket.Conn) {
 		save_wait.Done()
 		return
 	}
-	sockets_lock.Lock()
-	sockets[user.UserId] = ws
-	sockets_lock.Unlock()
 	Log.Println("New user", user.UserId, "joins", user.Location.Url)
 	for {
 		var buf []byte
@@ -71,20 +66,18 @@ func sendRecvServer(ws *websocket.Conn) {
 	GlobalLock.Unlock()
 	Log.Println("OnClose", "released Lock")
 	ws.Close()
-	sockets_lock.Lock()
-	delete(sockets, user.UserId)
-	sockets_lock.Unlock()
 	save_wait.Done()
 }
 
 func SignalHandler(c chan os.Signal) {
 	Log.Printf("signal %v\n", <-c)
-	sockets_lock.Lock()
-	for user_id, socket := range sockets {
-		Log.Printf("closing connection for user %v\n", user_id)
-		socket.Close()
+	GlobalLock.Lock()
+	for _, loc := range Locations {
+		for _, user := range loc.Users {
+			user.Socket.Close()
+		}
 	}
-	sockets_lock.Unlock()
+	GlobalLock.Unlock()
 	save_wait.Wait()
 	// Why do we become a daemon here ?
 	Log.Printf("exit\n")
@@ -96,7 +89,6 @@ func init() {
 	os.MkdirAll(IMAGES_DIR, 0777)
 	os.MkdirAll(LOG_DIR, 0777)
 	flag.Parse()
-	sockets = make(map[int]*websocket.Conn)
 	now := time.Now()
 	var log_file io.Writer
 	var err error
