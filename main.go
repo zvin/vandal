@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"sort"
 	"sync"
 	"time"
 )
@@ -23,15 +22,16 @@ const (
 	STATIC_DIR = "static"
 )
 
-var GlobalLock sync.Mutex
-var port *int = flag.Int("p", 8000, "Port to listen.")
-var foreground *bool = flag.Bool("f", false, "Log on stdout.")
-var sockets map[int]*websocket.Conn
-var sockets_lock sync.Mutex
-var save_wait sync.WaitGroup
-var current_ranking Ranking
-var index_template = template.Must(template.ParseFiles("templates/index.html"))
-var Log *log.Logger
+var (
+	GlobalLock     sync.Mutex
+	port           *int  = flag.Int("p", 8000, "Port to listen.")
+	foreground     *bool = flag.Bool("f", false, "Log on stdout.")
+	sockets        map[int]*websocket.Conn
+	sockets_lock   sync.Mutex
+	save_wait      sync.WaitGroup
+	index_template = template.Must(template.ParseFiles("templates/index.html"))
+	Log            *log.Logger
+)
 
 func sendRecvServer(ws *websocket.Conn) {
 	save_wait.Add(1)
@@ -52,7 +52,7 @@ func sendRecvServer(ws *websocket.Conn) {
 			break
 		}
 		var v []interface{}
-		err = msgpack.Unmarshal([]byte(buf), &v, nil)
+		err = msgpack.Unmarshal(buf, &v, nil)
 		if err != nil {
 			Log.Printf("this is not msgpack: '%v'\n", buf)
 		} else {
@@ -112,41 +112,8 @@ func init() {
 	Log = log.New(log_file, "", log.LstdFlags)
 }
 
-type Website struct {
-	Url       string
-	UserCount int
-}
-
-type Ranking []Website
-
-func (r Ranking) Len() int {
-	return len(r)
-}
-
-func (r Ranking) Less(i, j int) bool {
-	return r[i].UserCount > r[j].UserCount // we went it in the reverse order
-}
-
-func (r Ranking) Swap(i, j int) {
-	r[i], r[j] = r[j], r[i]
-}
-
-func UpdateRanking() {
-	var ranking Ranking
-	Log.Println("UpdateRanking", "want Lock")
-	GlobalLock.Lock()
-	Log.Println("UpdateRanking", "got Lock")
-	for _, location := range Locations {
-		ranking = append(ranking, Website{Url: location.Url, UserCount: len(location.Users)})
-	}
-	GlobalLock.Unlock()
-	Log.Println("UpdateRanking", "released Lock")
-	sort.Sort(ranking)
-	current_ranking = ranking[:MinInt(len(ranking), 10)]
-}
-
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
-	err := index_template.Execute(w, current_ranking)
+	err := index_template.Execute(w, CurrentlyUsedSites)
 	if err != nil {
 		Log.Printf("Couldn't execute template: %v\n", err)
 	}
@@ -160,7 +127,7 @@ func main() {
 	go func() {
 		tick := time.Tick(10 * time.Second)
 		for _ = range tick {
-			UpdateRanking()
+			UpdateCurrentlyUsedSites()
 		}
 	}()
 

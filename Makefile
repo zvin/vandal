@@ -8,7 +8,7 @@ ifeq ($(wildcard $(CLOSURECOMPILER)),)
 endif
 BUILD=build
 GOOUT=$(BUILD)/vandal
-GOFILES=eventtype.go location.go main.go user.go messageslog.go utils.go
+GOFILES=eventtype.go location.go main.go user.go messageslog.go utils.go currently_used_sites.go
 JSOUT=$(BUILD)/static/script.js
 JSFILES=js/jscolor.js js/msgpack.js js/script.js
 HTMLOUT=$(BUILD)/templates/index.html
