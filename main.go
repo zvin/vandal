@@ -31,7 +31,7 @@ var (
 	Log            *log.Logger
 )
 
-func sendRecvServer(ws *websocket.Conn) {
+func socket_handler(ws *websocket.Conn) {
 	save_wait.Add(1)
 	user := NewUser(ws)
 	if user == nil {
@@ -69,7 +69,7 @@ func sendRecvServer(ws *websocket.Conn) {
 	save_wait.Done()
 }
 
-func SignalHandler(c chan os.Signal) {
+func signal_handler(c chan os.Signal) {
 	Log.Printf("signal %v\n", <-c)
 	GlobalLock.Lock()
 	for _, loc := range Locations {
@@ -104,7 +104,7 @@ func init() {
 	Log = log.New(log_file, "", log.LstdFlags)
 }
 
-func IndexHandler(w http.ResponseWriter, r *http.Request) {
+func index_handler(w http.ResponseWriter, r *http.Request) {
 	err := index_template.Execute(w, CurrentlyUsedSites)
 	if err != nil {
 		Log.Printf("Couldn't execute template: %v\n", err)
@@ -113,7 +113,7 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	SignalChan := make(chan os.Signal)
-	go SignalHandler(SignalChan)
+	go signal_handler(SignalChan)
 	signal.Notify(SignalChan, os.Interrupt, os.Kill)
 
 	go func() {
@@ -130,10 +130,10 @@ func main() {
 		}
 	}()
 
-	http.Handle("/ws", websocket.Handler(sendRecvServer))
+	http.Handle("/ws", websocket.Handler(socket_handler))
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(STATIC_DIR))))
 	http.Handle("/img/", http.StripPrefix("/img/", http.FileServer(http.Dir(IMAGES_DIR))))
-	http.Handle("/", http.HandlerFunc(IndexHandler))
+	http.Handle("/", http.HandlerFunc(index_handler))
 	Log.Printf("Listening on http://localhost:%d/\n", *port)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
 	if err != nil {
