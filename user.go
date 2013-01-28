@@ -2,10 +2,8 @@ package main
 
 import (
 	"code.google.com/p/go.net/websocket"
-	"errors"
 	"github.com/ugorji/go-msgpack"
 	"net/url"
-	"reflect"
 	"strconv"
 )
 
@@ -148,19 +146,6 @@ func (user *User) ChangeNickname(nickname string, timestamp int64) {
 
 func (user *User) ChatMessage(msg string, timestamp int64) {
 	user.Location.Chat.AddMessage(timestamp, user.Nickname, msg)
-}
-
-func ToInt(n interface{}) (result int, err error) {
-	switch n.(type) {
-	case int, int8, int16, int32, int64:
-		result = int(reflect.ValueOf(n).Int())
-	case uint, uint8, uint16, uint32, uint64:
-		result = int(reflect.ValueOf(n).Uint())
-	default:
-		Log.Printf("ToInt, not an int: %#v ", n)
-		err = errors.New("Not an int")
-	}
-	return result, err
 }
 
 func (user *User) GotMessage(event []interface{}) {
