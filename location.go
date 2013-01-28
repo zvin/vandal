@@ -1,8 +1,6 @@
 package main
 
 import (
-	"bytes"
-	"encoding/base64"
 	"github.com/zvin/gocairo"
 	"io/ioutil"
 	"math"
@@ -17,14 +15,6 @@ const (
 var (
 	Locations map[string]*Location
 )
-
-func Base64Encode(data string) string {
-	bb := &bytes.Buffer{}
-	encoder := base64.NewEncoder(base64.StdEncoding, bb)
-	encoder.Write([]byte(data))
-	encoder.Close()
-	return bb.String()
-}
 
 func SaveAllLocations() {
 	Log.Println("SaveAllLocations", "want Lock")

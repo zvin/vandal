@@ -1,10 +1,20 @@
 package main
 
 import (
+	"bytes"
+	"encoding/base64"
 	"errors"
 	"reflect"
 	"time"
 )
+
+func Base64Encode(data string) string {
+	bb := &bytes.Buffer{}
+	encoder := base64.NewEncoder(base64.StdEncoding, bb)
+	encoder.Write([]byte(data))
+	encoder.Close()
+	return bb.String()
+}
 
 func MinInt(a, b int) int {
 	if a < b {
