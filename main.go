@@ -134,7 +134,7 @@ func main() {
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(STATIC_DIR))))
 	http.Handle("/img/", http.StripPrefix("/img/", http.FileServer(http.Dir(IMAGES_DIR))))
 	http.Handle("/", http.HandlerFunc(index_handler))
-	Log.Printf("Listening on http://localhost:%d/\n", *port)
+	Log.Printf("Listening on port %d\n", *port)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
 	if err != nil {
 		panic("ListenAndServe: " + err.Error())
