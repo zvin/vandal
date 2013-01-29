@@ -119,14 +119,6 @@ func (location *Location) DrawLine(x1, y1, x2, y2, duration, red, green, blue in
 	location.Surface.Stroke()
 }
 
-func (location *Location) GetImageBytes() []byte {
-	data, err := ioutil.ReadFile(location.FileName)
-	if err != nil {
-		Log.Println("Error reading file ", err)
-	}
-	return data
-}
-
 func (location *Location) GetDelta() []interface{} {
 	return location.delta
 }
