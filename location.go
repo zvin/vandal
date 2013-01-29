@@ -2,9 +2,9 @@ package main
 
 import (
 	"github.com/zvin/gocairo"
-	"io/ioutil"
 	"math"
 	"strings"
+	"sync"
 )
 
 const (
@@ -13,23 +13,12 @@ const (
 )
 
 var (
-	Locations map[string]*Location
+	Locations      map[string]*Location
+	LocationsMutex sync.RWMutex
 )
 
-func SaveAllLocations() {
-	Log.Println("SaveAllLocations", "want Lock")
-	GlobalLock.Lock()
-	Log.Println("SaveAllLocations", "got Lock")
-	defer func() {
-		GlobalLock.Unlock()
-		Log.Println("SaveAllLocations", "released Lock")
-	}()
-	for _, location := range Locations {
-		location.Save()
-	}
-}
-
 type Location struct {
+	Mutex        sync.RWMutex
 	Url          string
 	Users        []*User
 	FileName     string
@@ -49,6 +38,7 @@ func GetLocation(url string) *Location {
 		return location
 	} else {
 		location = NewLocation(url)
+		Locations[url] = location
 	}
 	return location
 }
@@ -56,7 +46,6 @@ func GetLocation(url string) *Location {
 func NewLocation(url string) *Location {
 	loc := new(Location)
 	loc.Url = url
-	Locations[url] = loc
 	b64fname := Base64Encode(url)
 	b64fname = b64fname[:MinInt(len(b64fname), 251)]
 	b64fname = strings.Replace(b64fname, "/", "_", -1)
@@ -82,9 +71,6 @@ func (location *Location) RemoveUser(user *User) {
 	location.Users = Remove(location.Users, user)
 	if len(location.Users) == 0 {
 		location.Save()
-		delete(Locations, location.Url)
-		location.Surface.Finish()
-		location.Surface.Destroy()
 	}
 }
 
