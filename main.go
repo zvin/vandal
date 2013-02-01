@@ -166,6 +166,13 @@ func update_currently_used_sites() {
 	currently_used_sites = sites[:MinInt(len(sites), 10)]
 }
 
+func maxAgeHandler(seconds int, h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Cache-Control", fmt.Sprintf("max-age=%d, public, must-revalidate, proxy-revalidate", seconds))
+		h.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 	SignalChan := make(chan os.Signal)
 	go signal_handler(SignalChan)
@@ -187,7 +194,7 @@ func main() {
 
 	http.Handle("/ws", websocket.Handler(socket_handler))
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(STATIC_DIR))))
-	http.Handle("/img/", http.StripPrefix("/img/", http.FileServer(http.Dir(IMAGES_DIR))))
+	http.Handle("/img/", maxAgeHandler(0, http.StripPrefix("/img/", http.FileServer(http.Dir(IMAGES_DIR)))))
 	http.Handle("/", http.HandlerFunc(index_handler))
 	Log.Printf("Listening on port %d\n", *port)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
