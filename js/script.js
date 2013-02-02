@@ -7,6 +7,7 @@ var DOMAIN              = "DOMAIN_PLACEHOLDER",
     CROSSHAIR_HALF_SIZE = 8,
     WIDTH               = 2000,
     HEIGHT              = 3000,
+    MOUSEMOVE_DELAY     = 16,  // minimum time (in ms) between two mousemove events; 16ms ~= 60Hz
     this_script         = document.documentElement.lastChild,
     users               = new Object(),
     mask_lines          = new Array(),
@@ -149,7 +150,9 @@ function time_since_last_time(){
     }
     now = (new Date()).getTime()
     duration = now - last_time
-    last_time = now
+    if (duration >= MOUSEMOVE_DELAY){  // if duration is too short, act like if we were never called
+        last_time = now
+    }
     return duration
 }
 
@@ -163,10 +166,11 @@ function get_my_color(){
 
 function mousemove(ev){
 //    console.log(ev)
+    var duration = time_since_last_time()
+    if (duration < MOUSEMOVE_DELAY) return
     // offset for chrome and layer for mozilla
     var mouse_x  = ev.offsetX || ev.layerX,
         mouse_y  = ev.offsetY || ev.layerY,
-        duration = time_since_last_time(),
         my_color
     send_event([
         EventType.mouse_move,
