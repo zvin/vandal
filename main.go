@@ -28,7 +28,7 @@ var (
 	foreground           *bool = flag.Bool("f", false, "Log on stdout.")
 	sockets_wait         sync.WaitGroup
 	index_template       = template.Must(template.ParseFiles("templates/index.html"))
-	currently_used_sites []Website
+	currently_used_sites LockableWebsiteSlice
 	Log                  *log.Logger
 )
 
@@ -129,7 +129,9 @@ func init() {
 }
 
 func index_handler(w http.ResponseWriter, r *http.Request) {
-	err := index_template.Execute(w, currently_used_sites)
+	currently_used_sites.Mutex.RLock()
+	err := index_template.Execute(w, currently_used_sites.Sites)
+	currently_used_sites.Mutex.RUnlock()
 	if err != nil {
 		Log.Printf("Couldn't execute template: %v\n", err)
 	}
@@ -163,7 +165,9 @@ func update_currently_used_sites() {
 	}
 	LocationsMutex.RUnlock()
 	SortWebsites(sites)
-	currently_used_sites = sites[:MinInt(len(sites), 10)]
+	currently_used_sites.Mutex.Lock()
+	currently_used_sites.Sites = sites[:MinInt(len(sites), 10)]
+	currently_used_sites.Mutex.Unlock()
 }
 
 func maxAgeHandler(seconds int, h http.Handler) http.Handler {

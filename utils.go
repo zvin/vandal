@@ -5,8 +5,14 @@ import (
 	"encoding/base64"
 	"errors"
 	"reflect"
+	"sync"
 	"time"
 )
+
+type LockableWebsiteSlice struct {
+	Mutex sync.RWMutex
+	Sites []Website
+}
 
 func Base64Encode(data string) string {
 	bb := &bytes.Buffer{}
