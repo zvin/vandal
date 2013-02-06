@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"errors"
+	"math"
 	"reflect"
 	"sync"
 	"time"
@@ -20,6 +21,17 @@ func Base64Encode(data string) string {
 	encoder.Write([]byte(data))
 	encoder.Close()
 	return bb.String()
+}
+
+func MaxFloat(a, b float64) float64 {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func Distance(x1, y1, x2, y2 int) float64 {
+	return math.Sqrt(float64((x1 - x2) ^ 2 + (y1 - y2) ^ 2))
 }
 
 func MinInt(a, b int) int {

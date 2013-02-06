@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/zvin/gocairo"
-	"math"
 	"strings"
 	"sync"
 )
@@ -72,17 +71,6 @@ func (location *Location) RemoveUser(user *User) {
 	if len(location.Users) == 0 {
 		location.Save()
 	}
-}
-
-func MaxFloat(a, b float64) float64 {
-	if a > b {
-		return a
-	}
-	return b
-}
-
-func Distance(x1, y1, x2, y2 int) float64 {
-	return math.Sqrt(float64((x1 - x2) ^ 2 + (y1 - y2) ^ 2))
 }
 
 func (location *Location) DrawLine(x1, y1, x2, y2, duration, red, green, blue int, use_pen bool) {
