@@ -78,16 +78,19 @@ func (location *Location) DrawLine(x1, y1, x2, y2, duration, red, green, blue in
 	if duration <= 0 {
 		return
 	}
-	location.delta = append(location.delta, []interface{}{x1, y1, x2, y2, duration, red, green, blue, use_pen})
 	d := Distance(x1, y1, x2, y2)
-	speed := MaxFloat(d/float64(duration), 1)
+	if d <= 0 {
+		return
+	}
+	location.delta = append(location.delta, []interface{}{x1, y1, x2, y2, duration, red, green, blue, use_pen})
+	speed := d / float64(duration)
 	if !use_pen { // not use_pen: use eraser
 		location.Surface.SetOperator(cairo.OperatorDestOut)
 	} else {
 		location.Surface.SetOperator(cairo.OperatorOver)
 		location.Surface.SetSourceRGB(float64(red)/255., float64(green)/255., float64(blue)/255.)
 	}
-	location.Surface.SetLineWidth(1. / (speed * 3))
+	location.Surface.SetLineWidth(1. / (1.3 + (3. * speed)))
 	location.Surface.MoveTo(float64(x1), float64(y1))
 	location.Surface.LineTo(float64(x2), float64(y2))
 	location.Surface.Stroke()
