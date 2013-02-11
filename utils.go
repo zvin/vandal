@@ -31,7 +31,7 @@ func MaxFloat(a, b float64) float64 {
 }
 
 func Distance(x1, y1, x2, y2 int) float64 {
-	return math.Sqrt(math.Pow(float64(x1 - x2), 2) + math.Pow(float64(y1 - y2), 2))
+	return math.Sqrt(math.Pow(float64(x1-x2), 2) + math.Pow(float64(y1-y2), 2))
 }
 
 func MinInt(a, b int) int {
