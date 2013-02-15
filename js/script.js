@@ -844,6 +844,10 @@ function create_socket(){
 
 //function init(){
 
+    if (document.location.protocol == "https:"){
+        alert("Sorry, eatponies.com does not work on https websites.")
+        return
+    }
     create_toolbar()
     create_chat_window()
     create_loading_box()
