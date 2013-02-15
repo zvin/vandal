@@ -33,7 +33,8 @@ var DOMAIN              = "DOMAIN_PLACEHOLDER",
     incoming_blobs = [],
     is_decoding = false,
     chat_div, myPicker, nickname_span, canvas, messages_div, mySocket,
-    mask_canvas, ctx, mask_ctx, biggest_node, last_time, toolbar, loading_box
+    mask_canvas, ctx, mask_ctx, biggest_node, last_time, toolbar, loading_box,
+    progress_bar
 
 
 /**
@@ -285,12 +286,31 @@ function gotmessage(event){
     }else if (type == EventType.chat_message){
         add_chat_message(user.get_label(), event[0], event[1])
     }else if (type == EventType.welcome){
-        copy_img_in_canvas("http://" + DOMAIN + "/" + event[0])  // image url
+        load_image("http://" + DOMAIN + "/" + event[0])          // image url
         draw_delta(event[1])                                     // delta
         display_chat_log(event[2])                               // chat history
-        set_loading_off()
     }else if (type == EventType.change_nickname){
         user.change_nickname.apply(user, event)
+    }
+}
+
+function load_image(url){
+    var request = new XMLHttpRequest();
+    request.onprogress = updateProgressBar;
+    request.onload = showImage;
+    request.onloadend = set_loading_off;
+    request.open("GET", url, true);
+    request.responseType = 'arraybuffer';
+    request.send(null);
+
+    function updateProgressBar(e){
+        if (e.lengthComputable)
+            progress_bar.value = e.loaded / e.total * 100;
+    }
+
+    function showImage(){
+        var blob = new Blob([new Uint8Array(request.response)], {"type": "image/png"});
+        copy_img_in_canvas(URL.createObjectURL(blob))
     }
 }
 
@@ -537,7 +557,12 @@ function create_loading_box(){
     loading_box.style.lineHeight = "50px"
     loading_box.style.textAlign = "center"
     loading_box.style.zIndex = "100005"
-    loading_box.appendChild(document.createTextNode("Loading..."))
+    progress_bar = document.createElement("progress")
+    progress_bar.value = 0
+    progress_bar.max = 100
+    progress_bar.removeAttribute("value")
+    progress_bar.style.width = "100%"
+    loading_box.appendChild(progress_bar)
     document.body.appendChild(loading_box)
 }
 

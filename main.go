@@ -172,6 +172,7 @@ func update_currently_used_sites() {
 
 func maxAgeHandler(seconds int, h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Access-Control-Allow-Origin", "*")
 		w.Header().Add("Cache-Control", fmt.Sprintf("max-age=%d, public, must-revalidate, proxy-revalidate", seconds))
 		h.ServeHTTP(w, r)
 	})
