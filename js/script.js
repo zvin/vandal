@@ -8,6 +8,7 @@ var DOMAIN              = "DOMAIN_PLACEHOLDER",
     WIDTH               = 2000,
     HEIGHT              = 3000,
     MOUSEMOVE_DELAY     = 16,  // minimum time (in ms) between two mousemove events; 16ms ~= 60Hz
+    MAX_ZINDEX          = 2147483647,
     this_script         = document.documentElement.lastChild,
     users               = new Object(),
     mask_lines          = new Array(),
@@ -37,6 +38,28 @@ var DOMAIN              = "DOMAIN_PLACEHOLDER",
     progress_bar
 
 
+function reverse_zindex(level){
+    // level 0 is on top
+    return MAX_ZINDEX - level
+}
+
+function decrease_zindexes(element, levels, limit){
+    // Walks the element's childs and decreases all zindexes by 'levels' value
+    // if the value is superior or equal to limit.
+    // This is useful on websites that use the maximum zindex 2147483647
+    if (element.nodeType == document.ELEMENT_NODE){
+        var style = document.defaultView.getComputedStyle(element, null)
+        if ((style.zIndex != "") && (style.zIndex != "auto") && (style.zIndex >= limit)){
+            console.log(element, style.zIndex)
+            element.style.zIndex = style.zIndex - levels
+        }
+        for (var i=0; i<element.childNodes.length; i++){
+            decrease_zindexes(element.childNodes[i], levels, limit)
+        }
+    }
+}
+
+
 /**
  * @constructor
  */
@@ -57,7 +80,7 @@ function User(user_id, position, color, mouse_is_down, it_is_me, nickname, use_p
             this.label.appendChild(text)
             this.label.style.position = "absolute"
             this.label.style.paddingLeft = "16px"
-            this.label.style.zIndex = "100001"
+            this.label.style.zIndex = reverse_zindex(4)
             this.label.style.background = "url(http://" + DOMAIN + "/static/crosshair.png) no-repeat"
             this.reposition_label()
             document.body.appendChild(this.label)
@@ -508,7 +531,7 @@ function create_toolbar(){
     toolbar.appendChild(tool_on)
     toolbar.appendChild(button_close)
     toolbar.appendChild(handle)
-    toolbar.style.zIndex = "100004"
+    toolbar.style.zIndex = reverse_zindex(1)
     document.body.appendChild(toolbar)
 
 
@@ -556,7 +579,7 @@ function create_loading_box(){
     loading_box.style.fontStyle = "normal"
     loading_box.style.lineHeight = "50px"
     loading_box.style.textAlign = "center"
-    loading_box.style.zIndex = "100005"
+    loading_box.style.zIndex = reverse_zindex(0)
     progress_bar = document.createElement("progress")
     progress_bar.value = 0
     progress_bar.max = 100
@@ -594,7 +617,7 @@ function create_chat_window(){
     chat_div.style.fontVariant = "normal"
     chat_div.style.fontStyle = "normal"
     chat_div.style.lineHeight = "16px"
-    chat_div.style.zIndex = "100003"
+    chat_div.style.zIndex = reverse_zindex(2)
     chat_div.style.overflowY = "auto"
     chat_div.style.overflowX = "hidden"
     chat_div.style.wordWrap = "break-word"
@@ -849,8 +872,8 @@ function create_socket(){
     mask_canvas.style.cursor = "crosshair"
     canvas.style.top = document.body.clientTop
     mask_canvas.style.top = document.body.clientTop
-    canvas.style.zIndex = "100000"
-    mask_canvas.style.zIndex = "100002"
+    canvas.style.zIndex = reverse_zindex(5)
+    mask_canvas.style.zIndex = reverse_zindex(3)
     canvas.width = WIDTH
     mask_canvas.width = WIDTH
     canvas.height = HEIGHT
@@ -873,6 +896,7 @@ function create_socket(){
         alert("Sorry, eatponies.com does not work on https websites.")
         return
     }
+    decrease_zindexes(document.body, 5, 2147480000)
     create_toolbar()
     create_chat_window()
     create_loading_box()
