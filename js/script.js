@@ -654,7 +654,7 @@ function create_chat_window(){
     choose_div.style.margin = "10px 0"
     choose_div.style.border = "solid 1px #999"
     choose_div.style.borderRadius = "5px"
-    choose_div.style.background = "-moz-linear-gradient(top, #ffffff 58%, #b2b2b2 98%)" // TODO: webkit
+    choose_div.style.background = "linear-gradient(#ffffff 58%, #b2b2b2 98%)"
     choose_div.appendChild(document.createTextNode("Change"))
     choose_div.onclick = function(){
         send_change_nickname(prompt("Enter your new nickname (" + MAX_NICKNAME_LENGTH + " characters max):", ""))
