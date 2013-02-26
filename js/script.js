@@ -647,6 +647,7 @@ function create_chat_window(){
     nickname_p.appendChild(nickname_span)
     chat_div.appendChild(nickname_p)
     choose_div.style.cssFloat = "left"
+    choose_div.style.cursor = "pointer"
     choose_div.style.width = "45px"
     choose_div.style.padding = "5px"
     choose_div.style.margin = "10px 0"
