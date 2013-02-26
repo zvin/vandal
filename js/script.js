@@ -38,6 +38,22 @@ var DOMAIN              = "DOMAIN_PLACEHOLDER",
     progress_bar
 
 
+function put_embeds_down(){
+    // dirty hack to be able to draw over youtube flash videos
+    var embeds = document.getElementsByTagName("embed")
+    for (var i=0; i<embeds.length; i++){
+        var embed = embeds[i]
+        if ((embed.getAttribute("type") == "application/x-shockwave-flash") && (embed.getAttribute("wmode") == null)) {
+            var parent = embed.parentNode
+            embed.setAttribute("wmode", "opaque")
+            parent.removeChild(embed)
+            setTimeout(function(){parent.appendChild(embed)}, 0)
+            setTimeout(function(){embed.stopVideo()}, 1000)
+        }
+    }
+}
+
+
 function reverse_zindex(level){
     // level 0 is on top
     return MAX_ZINDEX - level
@@ -901,6 +917,7 @@ function create_socket(){
     create_chat_window()
     create_loading_box()
     set_loading_on()
+    put_embeds_down()
     create_socket()
     reposition_canvas()
     window.onresize = reposition_canvas
