@@ -631,6 +631,7 @@ function create_chat_window(){
     chat_div.style.fontSize = "12px"
     chat_div.style.fontWeight = "normal"
     chat_div.style.fontVariant = "normal"
+    chat_div.style.textAlign = "left"
     chat_div.style.fontStyle = "normal"
     chat_div.style.lineHeight = "16px"
     chat_div.style.zIndex = reverse_zindex(2)
