@@ -9,6 +9,7 @@ var DOMAIN              = "DOMAIN_PLACEHOLDER",
     HEIGHT              = 3000,
     MOUSEMOVE_DELAY     = 16,  // minimum time (in ms) between two mousemove events; 16ms ~= 60Hz
     MAX_ZINDEX          = 2147483647,
+    MAX_NICKNAME_LENGTH = 20,
     this_script         = document.documentElement.lastChild,
     users               = new Object(),
     mask_lines          = new Array(),
@@ -396,7 +397,7 @@ function send_change_tool(use_pen){
 }
 
 function send_change_nickname(nickname){
-    if (nickname != null){
+    if ((nickname != null) && (nickname.length <= MAX_NICKNAME_LENGTH)){
         send_event([
             EventType.change_nickname,
             nickname
@@ -655,7 +656,9 @@ function create_chat_window(){
     choose_div.style.borderRadius = "5px"
     choose_div.style.background = "-moz-linear-gradient(top, #ffffff 58%, #b2b2b2 98%)" // TODO: webkit
     choose_div.appendChild(document.createTextNode("Change"))
-    choose_div.onclick = function(){send_change_nickname(prompt("Enter your new nickname:", ""))}
+    choose_div.onclick = function(){
+        send_change_nickname(prompt("Enter your new nickname (" + MAX_NICKNAME_LENGTH + " characters max):", ""))
+    }
     chat_div.appendChild(choose_div)
     icon_div.style.cssFloat = "left"
     icon_div.style.position = "absolute"

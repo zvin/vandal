@@ -6,7 +6,10 @@ import (
 	"strconv"
 )
 
-const MAX_USERS_PER_LOCATION = 20
+const (
+	MAX_USERS_PER_LOCATION = 20
+	MAX_NICKNAME_LENGTH = 20
+)
 
 var userIdGenerator chan int
 
@@ -164,8 +167,14 @@ func (user *User) GotMessage(event []interface{}) {
 		user.changeColor(p0, p1, p2)
 	case EventTypeChangeNickname:
 		timestamp := Timestamp()
-		user.changeNickname(params[0].(string), timestamp)
-		event = append(event, timestamp)
+		nickname := params[0].(string)
+		if len(nickname) <= MAX_NICKNAME_LENGTH {
+			user.changeNickname(params[0].(string), timestamp)
+			event = append(event, timestamp)
+		} else {
+			user.Error("Nickname too long")
+			return
+		}
 	case EventTypeChatMessage:
 		timestamp := Timestamp()
 		user.chatMessage(params[0].(string), timestamp)
