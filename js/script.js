@@ -1,8 +1,3 @@
-window.webinvader_pad = new (function(){
-"use strict"
-
-//var msgpack = MessagePack;
-
 var DOMAIN              = "DOMAIN_PLACEHOLDER",
     CROSSHAIR_HALF_SIZE = 8,
     WIDTH               = 2000,
@@ -927,4 +922,3 @@ function create_socket(){
     reposition_canvas()
     window.onresize = reposition_canvas
 //}
-})()
