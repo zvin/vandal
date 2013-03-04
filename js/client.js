@@ -1,3 +1,17 @@
+var EventType = {
+	join            : 1,
+	leave           : 2,
+	welcome         : 3,
+	change_color    : 4,
+	change_tool     : 5,
+	mouse_move      : 6,
+	mouse_up        : 7,
+	mouse_down      : 8,
+	chat_message    : 9,
+	change_nickname : 10,
+	error           : 11
+}
+
 function send_event(event){
 //    console.log(event, msgpack.pack(event, true).length)
 //    console.log(msgpack.unpack(msgpack.pack(event, true)), event)
