@@ -2,37 +2,54 @@ function apply_default_style(element){
     element.style.color = "black"
 }
 
-function create_element(name){
+function create_element(name, style){
     var element = document.createElement(name)
     apply_default_style(element)
+    for (var key in style) {
+        if (style.hasOwnProperty(key)) {
+            element.style.setProperty(key, style[key])
+        }
+    }
     return element
 }
 
 function create_toolbar(){
     function create_button(background){
-        var button = create_element("div")
-        button.style.width      = "50px"
-        button.style.height     = "50px"
-        button.style.cssFloat   = "left"
-        button.style.cursor     = "pointer"
-        button.style.background = "url(http://" + DOMAIN + "/static/" + background + ") no-repeat scroll 6px 6px transparent"
+        var button = create_element("div", {
+            "width"     : "50px",
+            "height"    : "50px",
+            "float"     : "left",
+            "cursor"    : "pointer",
+            "background": "url(http://" + DOMAIN + "/static/" + background + ") no-repeat scroll 6px 6px transparent"
+        })
         return button
     }
     function create_shadow(left){
-        var shadow = create_element("div")
-        shadow.style.position     = "absolute"
-        shadow.style.width        = "38px"
-        shadow.style.height       = "38px"
-        shadow.style.margin       = "5px"
-        shadow.style.cssFloat     = "left"
-        shadow.style.top          = "0px"
-        shadow.style.left         = left + "px"
-        shadow.style.borderRadius = "5px"
-        shadow.style.cursor       = "pointer"
-        shadow.style.boxShadow    = "inset -1px 1px 3px 0px rgba(0, 0, 0, 0.3)"
-    return shadow
+        return create_element("div", {
+            "position"      : "absolute",
+            "width"         : "38px",
+            "height"        : "38px",
+            "margin"        : "5px",
+            "float"         : "left",
+            "top"           : "0px",
+            "left"          : left + "px",
+            "border-radius" : "5px",
+            "cursor"        : "pointer",
+            "box-shadow"    : "inset -1px 1px 3px 0px rgba(0, 0, 0, 0.3)"
+        })
     }
-    toolbar = create_element("div")
+    toolbar = create_element("div", {
+        "position"        : "fixed",
+        "top"             : "0px",
+        "left"            : "0px",
+        "width"           : "269px",
+        "height"          : "50px",
+        "border"          : "2px solid #000000",
+        "background-color": "#FFFFFF",
+        "border-radius"   : "5px 0px 0px 5px",
+        "box-shadow"      : "-2px 2px 5px 0px rgba(0, 0, 0, 0.3)"
+    })
+    toolbar.id = "fixed_toolbar"  // needed for jscolor
     var button_toggle_chat = create_button("chat.png"),
         button_color       = create_element("input"),
         handle             = create_element("div"),
@@ -56,18 +73,6 @@ function create_toolbar(){
             destroy()
         }
     }
-    // toolbar
-    toolbar.style.position = "fixed"
-    toolbar.style.top  = "0px"
-    toolbar.style.left = "0px"
-    toolbar.style.width  = "269px"
-    toolbar.style.height = "50px"
-    toolbar.style.border = "2px solid #000000"
-    toolbar.style.backgroundColor = "#FFFFFF"
-    toolbar.style.borderRadius = "5px 0px 0px 5px"
-    toolbar.style.boxShadow = "-2px 2px 5px 0px rgba(0, 0, 0, 0.3)"
-    toolbar.id = "fixed_toolbar"
-    // end toolbar
     // color
     if (document.compatMode == "BackCompat"){
         button_color.style.width = "26px"
@@ -144,30 +149,31 @@ function create_toolbar(){
 }
 
 function create_loading_box(){
-	loading_box = create_element("div")
-    loading_box.style.position = "fixed"
-    loading_box.style.top  = "50%"
-    loading_box.style.left = "50%"
-    loading_box.style.marginLeft = "-100px"
-    loading_box.style.marginTop = "-25px"
-    loading_box.style.width  = "200px"
-    loading_box.style.height = "50px"
-    loading_box.style.border = "2px solid #000000"
-    loading_box.style.backgroundColor = "white"
-    loading_box.style.padding = "10px"
-    loading_box.style.fontFamily = "Arial, Helvetica, sans-serif"
-    loading_box.style.fontSize = "36px"
-    loading_box.style.fontWeight = "normal"
-    loading_box.style.fontVariant = "normal"
-    loading_box.style.fontStyle = "normal"
-    loading_box.style.lineHeight = "50px"
-    loading_box.style.textAlign = "center"
-    loading_box.style.zIndex = reverse_zindex(0)
+	loading_box = create_element("div", {
+        "position"        : "fixed",
+        "top"             : "50%",
+        "left"            : "50%",
+        "margin-left"     : "-100px",
+        "margin-top"      : "-25px",
+        "width"           : "200px",
+        "height"          : "50px",
+        "border"          : "2px solid #000000",
+        "background-color": "white",
+        "padding"         : "10px",
+        "font-family"     : "Arial, Helvetica, sans-serif",
+        "font-size"       : "36px",
+        "font-weight"     : "normal",
+        "font-variant"    : "normal",
+        "font-style"      : "normal",
+        "line-height"     : "50px",
+        "text-align"      : "center",
+        "z-index"         :  reverse_zindex(0)
+    })
     progress_bar = document.createElement("progress")
     progress_bar.value = 0
     progress_bar.max = 100
     progress_bar.removeAttribute("value")
-    progress_bar.style.width = "100%"
+    progress_bar.style.setProperty("width", "100%")
     loading_box.appendChild(progress_bar)
     document.body.appendChild(loading_box)
 }
@@ -181,61 +187,65 @@ function set_loading_off(){
 }
 
 function create_chat_window(){
-    var nickname_p = create_element("p"),
-        choose_div = create_element("div"),
-        icon_div   = create_element("div"),
-        input      = create_element("input")
-    chat_div = create_element("div")
-    chat_div.style.position = "fixed"
-    chat_div.style.top  = "0px"
-    chat_div.style.right = "0px"
-    chat_div.style.width  = "200px"
-    chat_div.style.height = "100%"
-    chat_div.style.border = "2px solid #000000"
-    chat_div.style.backgroundColor = "white"
-    chat_div.style.padding = "10px"
-    chat_div.style.fontFamily = "Arial, Helvetica, sans-serif"
-    chat_div.style.fontSize = "12px"
-    chat_div.style.fontWeight = "normal"
-    chat_div.style.fontVariant = "normal"
-    chat_div.style.textAlign = "left"
-    chat_div.style.fontStyle = "normal"
-    chat_div.style.lineHeight = "16px"
-    chat_div.style.zIndex = reverse_zindex(2)
-    chat_div.style.overflowY = "auto"
-    chat_div.style.overflowX = "hidden"
-    chat_div.style.wordWrap = "break-word"
-    chat_div.style.display = "block"
-    nickname_p.style.margin = "0"
-    nickname_p.style.marginTop = "10px"
+    var nickname_p = create_element("p", {
+        "margin"    : "0",
+        "margin-top": "10px"
+    })
+    var choose_div = create_element("div", {
+        "float"        : "left",
+        "cursor"       : "pointer",
+        "width"        : "45px",
+        "padding"      : "5px",
+        "margin"       : "10px 0",
+        "border"       : "solid 1px #999",
+        "border-radius": "5px",
+        "background"   : "linear-gradient(#ffffff 58%, #b2b2b2 98%)"
+    })
+    var icon_div = create_element("div", {
+        "float"     : "left",
+        "position"  : "absolute",
+        "top"       : "44px",
+        "left"      : "150px",
+        "height"    : "40px",
+        "width"     : "60px",
+        "background": "url(http://" + DOMAIN + "/static/buddy.png) no-repeat scroll 6px 6px transparent"
+    })
+    var input = create_element("input", {
+        "width"           : "100%",
+        "background-color": "#f7f7f7"
+    })
+    chat_div = create_element("div", {
+        "position"        : "fixed",
+        "top"             : "0px",
+        "right"           : "0px",
+        "width"           : "200px",
+        "height"          : "100%",
+        "border"          : "2px solid #000000",
+        "background-color": "white",
+        "padding"         : "10px",
+        "font-family"     : "Arial, Helvetica, sans-serif",
+        "font-size"       : "12px",
+        "font-weight"     : "normal",
+        "font-variant"    : "normal",
+        "text-align"      : "left",
+        "font-style"      : "normal",
+        "line-height"     : "16px",
+        "z-index"         : reverse_zindex(2),
+        "overflow-y"      : "auto",
+        "overflow-x"      : "hidden",
+        "word-wrap"       : "break-word",
+        "display"         : "block"
+    })
     nickname_p.appendChild(document.createTextNode("Nickname : "))
-    nickname_span = create_element("span")
-    nickname_span.style.fontWeight = "bold"
+    nickname_span = create_element("span", {"font-weight": "bold"})
     nickname_p.appendChild(nickname_span)
     chat_div.appendChild(nickname_p)
-    choose_div.style.cssFloat = "left"
-    choose_div.style.cursor = "pointer"
-    choose_div.style.width = "45px"
-    choose_div.style.padding = "5px"
-    choose_div.style.margin = "10px 0"
-    choose_div.style.border = "solid 1px #999"
-    choose_div.style.borderRadius = "5px"
-    choose_div.style.background = "linear-gradient(#ffffff 58%, #b2b2b2 98%)"
     choose_div.appendChild(document.createTextNode("Change"))
     choose_div.onclick = function(){
         send_change_nickname(prompt("Enter your new nickname (" + MAX_NICKNAME_LENGTH + " characters max):", ""))
     }
     chat_div.appendChild(choose_div)
-    icon_div.style.cssFloat = "left"
-    icon_div.style.position = "absolute"
-    icon_div.style.top = "44px"
-    icon_div.style.left = "150px"
-    icon_div.style.height = "40px"
-    icon_div.style.width = "60px"
-    icon_div.style.background = "url(http://" + DOMAIN + "/static/buddy.png) no-repeat scroll 6px 6px transparent"
     chat_div.appendChild(icon_div)
-    input.style.width = "100%"
-    input.style.backgroundColor = "#f7f7f7"
     input.onkeyup = function(event){
         if (event.keyCode == 13){
             send_chat_message(input.value)
@@ -253,27 +263,22 @@ function format_time(timestamp){
 }
 
 function add_chat_message(username, msg, timestamp){
-    var p    = create_element("p"),
-        span = create_element("span")
-    p.style.marginTop = "10px"
-    span.style.fontWeight = "bold"
+    var p = create_element("p", {"margin-top": "10px"})
+    var span = create_element("span", {"font-weight": "bold"})
     span.appendChild(document.createTextNode(username))
     p.appendChild(span)
     p.appendChild(document.createTextNode(" : " + msg))
-    p.title = format_time(timestamp)
-    add_message(p)
+    add_message(p, timestamp)
 }
 
 function add_chat_notification(msg, timestamp){
-    var p = create_element("p")
-    p.style.fontStyle = "italic"
-    p.style.marginTop = "10px"
+    var p = create_element("p", {"font-style": "italic", "margin-top": "10px"})
     p.appendChild(document.createTextNode(msg))
-    p.title = format_time(timestamp)
-    add_message(p)
+    add_message(p, timestamp)
 }
 
-function add_message(msg){
+function add_message(msg, timestamp){
+    msg.title = format_time(timestamp)
     if (messages_div.firstChild == null){
         messages_div.appendChild(msg)
     }else{
