@@ -98,15 +98,17 @@ function create_socket(){
         alert("Connection to the server closed, please reload.")
         destroy()
     }
-    canvas = create_element("canvas")
-    mask_canvas = create_element("canvas")
-    canvas.style.position = "absolute"
-    mask_canvas.style.position = "absolute"
-    mask_canvas.style.cursor = "crosshair"
-    canvas.style.top = document.body.clientTop
-    mask_canvas.style.top = document.body.clientTop
-    canvas.style.zIndex = reverse_zindex(5)
-    mask_canvas.style.zIndex = reverse_zindex(3)
+    canvas = create_element("canvas", {
+        "position": "absolute",
+        "top"     : document.body.clientTop,
+        "z-index" : reverse_zindex(5)
+    })
+    mask_canvas = create_element("canvas", {
+        "position": "absolute",
+        "cursor"  : "crosshair",
+        "top"     : document.body.clientTop,
+        "z-index" : reverse_zindex(3)
+    })
     canvas.width = WIDTH
     mask_canvas.width = WIDTH
     canvas.height = HEIGHT
