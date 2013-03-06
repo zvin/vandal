@@ -1,7 +1,7 @@
 Vandal
 ======
 
-eatponies.com source code
+http://eatponies.com source code
 
 Install dependencies
 --------------------
