@@ -26,13 +26,14 @@ $(HTMLOUT): $(HTMLFILES) DOMAIN
 
 $(JSOUT): $(JSFILES) DOMAIN DEBUG
 	$(dir_guard)
+	cat $(JSFILES) > $(JSOUT)
 ifeq ($(DEBUG),true)
 	@echo "You sould get google closure-compiler from http://code.google.com/p/closure-compiler/"
 	@echo "and put compiler.jar in this folder."
 	@echo "I will only concatenate script files (no minifying)."
-	cat $(JSFILES) > $(JSOUT)
 else
-	java -jar $(CLOSURECOMPILER) --js $(JSFILES) --compilation_level SIMPLE_OPTIMIZATIONS --js_output_file $(JSOUT)
+	java -jar $(CLOSURECOMPILER) --js $(JSOUT) --compilation_level SIMPLE_OPTIMIZATIONS --js_output_file $(JSOUT).min
+	mv $(JSOUT).min $(JSOUT)
 endif
 	sed -i 's/DOMAIN_PLACEHOLDER/'$(DOMAIN)'/g' $(JSOUT)
 
