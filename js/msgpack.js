@@ -3,9 +3,7 @@
 // === msgpack ===
 // MessagePack -> http://msgpack.sourceforge.net/
 
-this.msgpack || (function(globalScope) {
-
-globalScope.msgpack = {
+var msgpack = {
     pack:       msgpackpack,    // msgpack.pack(data:Mix,
                                 //              toString:Boolean = false):ByteArray/ByteString/false
                                 //  [1][mix to String]    msgpack.pack({}, true) -> "..."
@@ -667,4 +665,3 @@ _ie && document.write('<script type="text/vbscript">\
 Function vblen(b)vblen=LenB(b.responseBody)End Function\n\
 Function vbstr(b)vbstr=CStr(b.responseBody)+chr(0)End Function</'+'script>');
 
-})(this);

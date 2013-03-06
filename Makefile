@@ -10,7 +10,7 @@ BUILD=build
 GOOUT=$(BUILD)/vandal
 GOFILES=eventtype.go location.go main.go user.go messageslog.go utils.go currently_used_sites.go
 JSOUT=$(BUILD)/static/script.js
-JSFILES=js/jscolor.js js/msgpack.js js/header.js js/user.js js/ui.js js/client.js js/script.js js/footer.js
+JSFILES=js/jscolor.js js/header.js js/msgpack.js js/user.js js/ui.js js/client.js js/script.js js/footer.js
 HTMLOUT=$(BUILD)/templates/index.html
 HTMLFILES=templates/index.html
 
