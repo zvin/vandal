@@ -66,4 +66,4 @@ License along with this program, in the file "COPYING".  If not, see
 
 js/jscolor.js is available under the GNU LESSER GENERAL PUBLIC LICENSE.
 
-js/msgpack.js is available under the MIT LICENSE.
+js/msgpack.codec.js is available under the MIT LICENSE.
