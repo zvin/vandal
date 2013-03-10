@@ -76,18 +76,11 @@ func (user *User) Error(description string) {
 	user.Socket.Close()
 }
 
-func (user *User) broadcast(event []interface{}, include_myself bool) {
-	//    fmt.Printf("users %v\n", user.Location.Users)
+func (user *User) broadcast(event []interface{}) {
 	// event.insert(1, user.UserId) ...
 	event = append(event[:1], append([]interface{}{user.UserId}, event[1:]...)...)
 	for _, other := range user.Location.Users {
-		if other != nil {
-			//            fmt.Printf("user %v\n", other)
-			if !include_myself && other == user {
-				continue
-			}
-			other.sendEvent(event)
-		}
+		other.sendEvent(event)
 	}
 }
 
@@ -180,7 +173,7 @@ func (user *User) GotMessage(event []interface{}) {
 		user.chatMessage(params[0].(string), timestamp)
 		event = append(event, timestamp)
 	}
-	user.broadcast(event, true)
+	user.broadcast(event)
 }
 
 func (user *User) OnOpen() {
@@ -217,7 +210,7 @@ func (user *User) OnOpen() {
 		user.UsePen,
 		timestamp,
 	}
-	user.broadcast(event, false)
+	user.broadcast(event) // user is not yet in location.Users, so it will not receive this event.
 	// Send this user to himself
 	event = []interface{}{
 		EventTypeJoin,
@@ -236,7 +229,7 @@ func (user *User) OnOpen() {
 
 func (user *User) OnClose() {
 	timestamp := Timestamp()
-	user.broadcast([]interface{}{EventTypeLeave, timestamp}, true)
+	user.broadcast([]interface{}{EventTypeLeave, timestamp})
 	user.Location.Chat.AddMessage(timestamp, "", "user "+user.Nickname+" left")
 	user.Location.RemoveUser(user)
 }

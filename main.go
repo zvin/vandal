@@ -58,8 +58,8 @@ func socket_handler(ws *websocket.Conn) {
 		return
 	}
 	Log.Println("New user", user.UserId, "joins", user.Location.Url)
-	user.Location.AddUser(user)
 	user.OnOpen()
+	user.Location.AddUser(user)
 	user.Location.Mutex.Unlock()
 
 	for {
