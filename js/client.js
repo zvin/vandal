@@ -101,7 +101,8 @@ function create_socket(){
     canvas = create_element("canvas", {
         "position": "absolute",
         "top"     : document.body.clientTop,
-        "z-index" : reverse_zindex(5)
+        "z-index" : reverse_zindex(5),
+        "outline" : "10px dashed #F30B55"
     })
     mask_canvas = create_element("canvas", {
         "position": "absolute",
