@@ -188,8 +188,9 @@ function set_loading_off(){
 
 function create_chat_window(){
     var nickname_p = create_element("p", {
-        "margin"    : "0",
-        "margin-top": "10px"
+        "margin"     : "0",
+        "margin-top" : "10px",
+        "text-indent": 0
     })
     var choose_div = create_element("div", {
         "float"        : "left",
@@ -263,7 +264,7 @@ function format_time(timestamp){
 }
 
 function add_chat_message(username, msg, timestamp){
-    var p = create_element("p", {"margin-top": "10px"})
+    var p = create_element("p", {"margin-top": "10px", "text-indent": 0})
     var span = create_element("span", {"font-weight": "bold"})
     span.appendChild(document.createTextNode(username))
     p.appendChild(span)
@@ -272,7 +273,9 @@ function add_chat_message(username, msg, timestamp){
 }
 
 function add_chat_notification(msg, timestamp){
-    var p = create_element("p", {"font-style": "italic", "margin-top": "10px"})
+    var p = create_element(
+        "p", {"font-style": "italic", "margin-top": "10px", "text-indent": 0}
+    )
     p.appendChild(document.createTextNode(msg))
     add_message(p, timestamp)
 }
