@@ -316,7 +316,6 @@ function decrease_zindexes(element, levels, limit){
     if (element.nodeType == document.ELEMENT_NODE){
         var style = document.defaultView.getComputedStyle(element, null)
         if ((style.zIndex != "") && (style.zIndex != "auto") && (style.zIndex >= limit)){
-            console.log(element, style.zIndex)
             element.style.zIndex = style.zIndex - levels
         }
         for (var i=0; i<element.childNodes.length; i++){
@@ -410,7 +409,6 @@ function canvas_set_left(offset){
 
 function mask_redraw(){
     if (mask_lines.length > max_size){
-//        console.log(mask_lines.length)
         max_size = mask_lines.length
     }
     mask_ctx.clearRect(0, 0, mask_canvas.width, mask_canvas.height)
@@ -420,7 +418,6 @@ function mask_redraw(){
 }
 
 function mask_push(line){
-    //console.log("push")
     mask_lines.push(line)
     draw_line.apply(this, line.concat([mask_ctx]))
 }
@@ -467,7 +464,6 @@ function copy_img_in_canvas(blob_id){
 
 function draw_delta(lines){
     if (lines) {
-//        console.log("draw delta", lines)
         for(var i=0; i<lines.length; i++){
             draw_line.apply(this, lines[i].concat([ctx]))
         }
