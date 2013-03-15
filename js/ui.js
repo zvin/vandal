@@ -335,10 +335,6 @@ function get_my_color(){
 
 
 function show_area(node){
-//    console.log(node, node.clientWidth * node.clientHeight)
-//    if ((typeof(canvas) != "undefined") && (node == canvas)){
-//        return 0
-//    }
     return node.clientWidth * node.clientHeight
 }
 
@@ -365,28 +361,13 @@ function walk_dom_max(node, func){
     return [max_node, max_value]
 }
 
-function hop(node){
-    var left  = node.offsetLeft,
-        width = node.offsetWidth,
-        right = 0
-    // next line won't work in chromium
-//    var right = Math.max(node.offsetParent.offsetWidth, node.scrollWidth) - (left + width)
-//    console.log(
-//        node.offsetLeft,
-//        max(node.offsetParent.offsetWidth, node.scrollWidth) - (node.offsetLeft + node.offsetWidth)
-//    )
-    return [left, width, right]
-}
-
 function window_width(){
     var docElemProp = window.document.documentElement["clientWidth"];
     return window.document.compatMode === "CSS1Compat" && docElemProp || window.document.body["clientWidth"] || docElemProp;
 }
 
-function there_is_a_scrollbar(){
-    //$(document).width() > $(window).width()
-//    return (document.getElementsByTagName("html")[0].scrollWidth > document.body.scrollWidth)
-    return (document.getElementsByTagName("html")[0].scrollWidth > window_width())
+function document_width(){
+	return document.getElementsByTagName("html")[0].scrollWidth
 }
 
 function hide_everything(){
@@ -410,29 +391,18 @@ function reposition_canvas(){
     hide_everything()
     if (typeof(biggest_node) == "undefined"){
         biggest_node = walk_dom_max(document.body, show_area)[0]
-//        console.log(biggest_node.offsetWidth, biggest_node.style.width)
-//        biggest_node.style.width = window.getComputedStyle(biggest_node).width
     }
-//    var biggest_node = walk_dom_max(document.body, show_area)[0]
-    if (biggest_node == null){
-//        console.log(Math.round(window_width() / 2) - (WIDTH / 2))
-        canvas_set_left( Math.round(window_width() / 2) - (WIDTH / 2) )
-        unhide_everything()
-        return
-    }
-//    console.log(biggest_node, biggest_node.style.display, biggest_node.offsetWidth)
-//    console.log(hop(biggest_node))
-    var left_width_right = hop(biggest_node),
-        left             = left_width_right[0],
-        width            = left_width_right[1],
-        right            = left_width_right[2]
-//    document.body.removeChild(canvas)
-    if (there_is_a_scrollbar()){
+    var wwidth = window_width()
+    if (document_width() > wwidth){
+        // there is a scrollbar, align the center of the canvas with the center of the document
         canvas_set_left( Math.round(document.getElementsByTagName("html")[0].scrollWidth / 2) - (WIDTH / 2) )
+    }else if ((biggest_node == null) || (biggest_node.offsetWidth > wwidth)){
+        // no biggest node or biggest node is wider than window (but there is no scrollbar): center the canvas
+        canvas_set_left( Math.round(wwidth / 2) - (WIDTH / 2) )
     }else{
-        canvas_set_left( left + Math.round(width / 2) - (WIDTH / 2) )
+        // align the center of the canvas with the center of the biggest node
+        canvas_set_left( biggest_node.offsetLeft + Math.round(biggest_node.offsetWidth / 2) - (WIDTH / 2) )
     }
-//    document.body.appendChild(canvas)
     unhide_everything()
 }
 
