@@ -464,9 +464,7 @@ function copy_img_in_canvas(blob_id){
 
 function draw_delta(lines){
     if (lines) {
-        for(var i=0; i<lines.length; i++){
-            draw_line.apply(this, lines[i].concat([ctx]))
-        }
+        lines.forEach(function(line){draw_line.apply(this, line.concat([ctx]))})
     }
 }
 
@@ -492,11 +490,11 @@ function load_image(url){
 
 function display_chat_log(messages) {
     if (messages == null) return
-    for(var i=0; i<messages.length; i++) {
-        if (messages[i][0] == "") {
-            add_chat_notification(messages[i][1], messages[i][2])
+    messages.forEach(function(message){
+        if (message[0] == "") {
+            add_chat_notification(message[1], message[2])
         } else {
-            add_chat_message(messages[i][0], messages[i][1], messages[i][2])
+            add_chat_message(message[0], message[1], message[2])
         }
-    }
+    })
 }
