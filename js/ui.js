@@ -326,11 +326,7 @@ function decrease_zindexes(element, levels, limit){
 }
 
 function get_my_color(){
-    return [
-        Math.round(myPicker.rgb[0] * 255),
-        Math.round(myPicker.rgb[1] * 255),
-        Math.round(myPicker.rgb[2] * 255)
-    ]
+    return myPicker.rgb.map(function(x){return Math.round(x * 255)})
 }
 
 
