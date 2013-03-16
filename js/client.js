@@ -156,6 +156,7 @@ function mousemove(ev){
 }
 
 function mousedown(ev){
+    mousemove(ev)
     send_event([EventType.mouse_down])
     my_mouse_is_down = true
     return false // prevent text selection in chrome
