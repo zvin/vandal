@@ -63,6 +63,11 @@ this.destroy = destroy
         alert("Sorry, eatponies.com does not work on https websites.")
         return
     }
+
+    var wrapper = create_element("div", {"width": WIDTH + "px", "margin": "auto"})
+    wrap(document.body, wrapper)
+    document.body.appendChild(wrapper)
+
     decrease_zindexes(document.body, 5, 2147480000)
     create_toolbar()
     create_chat_window()

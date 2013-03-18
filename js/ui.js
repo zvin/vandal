@@ -407,6 +407,12 @@ function canvas_set_left(offset){
     mask_canvas.style.left = offset + "px"
 }
 
+function wrap(from, to){
+    while(from.childNodes.length > 0){
+        to.appendChild(from.removeChild(from.firstChild))
+    }
+}
+
 function mask_redraw(){
     if (mask_lines.length > max_size){
         max_size = mask_lines.length
