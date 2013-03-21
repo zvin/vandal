@@ -18,7 +18,7 @@ var DOMAIN              = "DOMAIN_PLACEHOLDER",
     is_decoding = false,
     chat_div, myPicker, nickname_span, canvas, messages_div, mySocket,
     mask_canvas, ctx, mask_ctx, biggest_node, last_time, toolbar, loading_box,
-    progress_bar
+    progress_bar, frame_div
 
 
 function distance(x1, y1, x2, y2){
@@ -64,17 +64,11 @@ this.destroy = destroy
         return
     }
 
-    var wrapper = create_element("div", {"width": WIDTH + "px", "margin": "auto"})
-    wrap(document.body, wrapper)
-    document.body.appendChild(wrapper)
+    wrap_document_in_iframe()
 
-    decrease_zindexes(document.body, 5, 2147480000)
     create_toolbar()
     create_chat_window()
     create_loading_box()
     set_loading_on()
-    put_embeds_down()
     create_socket()
-    reposition_canvas()
-    window.onresize = reposition_canvas
 //}

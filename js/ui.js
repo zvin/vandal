@@ -289,128 +289,13 @@ function add_message(msg, timestamp){
     }
 }
 
-function put_embeds_down(){
-    // dirty hack to be able to draw over youtube flash videos
-    var embeds = document.getElementsByTagName("embed")
-    for (var i=0; i<embeds.length; i++){
-        var embed = embeds[i]
-        if ((embed.getAttribute("type") == "application/x-shockwave-flash") && (embed.getAttribute("wmode") == null)) {
-            var parent = embed.parentNode
-            embed.setAttribute("wmode", "opaque")
-            parent.removeChild(embed)
-            setTimeout(function(){parent.appendChild(embed)}, 0)
-            setTimeout(function(){embed.stopVideo()}, 1000)
-        }
-    }
-}
-
 function reverse_zindex(level){
     // level 0 is on top
     return MAX_ZINDEX - level
 }
 
-function decrease_zindexes(element, levels, limit){
-    // Walks the element's childs and decreases all zindexes by 'levels' value
-    // if the value is superior or equal to limit.
-    // This is useful on websites that use the maximum zindex 2147483647
-    if (element.nodeType == document.ELEMENT_NODE){
-        var style = document.defaultView.getComputedStyle(element, null)
-        if ((style.zIndex != "") && (style.zIndex != "auto") && (style.zIndex >= limit)){
-            element.style.zIndex = style.zIndex - levels
-        }
-        for (var i=0; i<element.childNodes.length; i++){
-            decrease_zindexes(element.childNodes[i], levels, limit)
-        }
-    }
-}
-
 function get_my_color(){
     return myPicker.rgb.map(function(x){return Math.round(x * 255)})
-}
-
-
-function show_area(node){
-    return node.clientWidth * node.clientHeight
-}
-
-function walk_dom_max(node, func){
-    var max_value = 0,
-        max_node  = null,
-        value, node_and_value, i
-
-    for (i=0; i<node.childNodes.length; i++){
-        if (node.childNodes[i].nodeType == Node.ELEMENT_NODE){
-            value = func(node.childNodes[i])
-            if (value > max_value){
-                max_value = value
-                max_node = node.childNodes[i]
-            }
-            node_and_value = walk_dom_max(node.childNodes[i], func)
-            if (node_and_value[1] > max_value){
-                max_value = node_and_value[1]
-                max_node  = node_and_value[0]
-            }
-        }
-    }
-
-    return [max_node, max_value]
-}
-
-function window_width(){
-    var docElemProp = window.document.documentElement["clientWidth"];
-    return window.document.compatMode === "CSS1Compat" && docElemProp || window.document.body["clientWidth"] || docElemProp;
-}
-
-function document_width(){
-	return document.getElementsByTagName("html")[0].scrollWidth
-}
-
-function hide_everything(){
-    canvas.style.display = "none"
-    mask_canvas.style.display = "none"
-    toolbar.style.display = "none"
-    chat_was_visible = (chat_div.style.display != "none")
-    chat_div.style.display = "none"
-}
-
-function unhide_everything(){
-    canvas.style.display = null
-    mask_canvas.style.display = null
-    toolbar.style.display = null
-    if (chat_was_visible){
-        chat_div.style.display = null
-    }
-}
-
-function reposition_canvas(){
-    hide_everything()
-    if (typeof(biggest_node) == "undefined"){
-        biggest_node = walk_dom_max(document.body, show_area)[0]
-    }
-    var wwidth = window_width()
-    if (document_width() > wwidth){
-        // there is a scrollbar, align the center of the canvas with the center of the document
-        canvas_set_left( Math.round(document.getElementsByTagName("html")[0].scrollWidth / 2) - (WIDTH / 2) )
-    }else if ((biggest_node == null) || (biggest_node.offsetWidth > wwidth)){
-        // no biggest node or biggest node is wider than window (but there is no scrollbar): center the canvas
-        canvas_set_left( Math.round(wwidth / 2) - (WIDTH / 2) )
-    }else{
-        // align the center of the canvas with the center of the biggest node
-        canvas_set_left( biggest_node.offsetLeft + Math.round(biggest_node.offsetWidth / 2) - (WIDTH / 2) )
-    }
-    unhide_everything()
-}
-
-
-function canvas_set_left(offset){
-    canvas.style.left = offset + "px"
-    mask_canvas.style.left = offset + "px"
-}
-
-function wrap(from, to){
-    while(from.childNodes.length > 0){
-        to.appendChild(from.removeChild(from.firstChild))
-    }
 }
 
 function mask_redraw(){
@@ -503,4 +388,47 @@ function display_chat_log(messages) {
             add_chat_message(message[0], message[1], message[2])
         }
     })
+}
+
+function wrap_document_in_iframe(){
+    var height = document.documentElement.scrollHeight
+    var content = []
+    for (var i=0; i<document.documentElement.childNodes.length; i++){
+        var child = document.documentElement.childNodes[i]
+        if (child !== this_script){  // do not copy this script ot the iframe
+            content.push(document.documentElement.removeChild(child))
+        }
+    }
+    document.documentElement.appendChild(document.createElement("body"))
+    frame_div = create_element("div", {
+        "position": "relative",
+        "width"   : WIDTH + "px",
+        "margin"  : "auto",
+    })
+    var frame = create_element("iframe", {
+        "width"   : "100%",
+        "height"  : height + "px",
+        "overflow": "hidden",
+        "border"  : 0
+    })
+    frame_div.appendChild(frame)
+    document.body.appendChild(frame_div)
+    setTimeout(
+        function(){
+            // copy html content
+            for (var i=0; i<content.length; i++){
+                frame.contentWindow.document.documentElement.appendChild(content.pop())
+            }
+            // copy globals
+            for (var key in window){
+                if (window.hasOwnProperty(key)){
+                    try{
+                        frame.contentWindow[key] = window[key]
+                    }catch(err){
+                    }
+                }
+            }
+        },
+        100
+    )
 }
