@@ -399,7 +399,7 @@ function wrap_document_in_iframe(){
             content.push(document.documentElement.removeChild(child))
         }
     }
-    document.documentElement.appendChild(document.createElement("body"))
+    document.documentElement.innerHTML = ""
     frame_div = create_element("div", {
         "position": "relative",
         "width"   : WIDTH + "px",
