@@ -4,6 +4,7 @@ import (
 	"github.com/zvin/gocairo"
 	"strings"
 	"sync"
+	"time"
 )
 
 const (
@@ -16,8 +17,16 @@ var (
 	LocationsMutex sync.RWMutex
 )
 
+type UserAndEvent struct {
+	User  *User
+	Event []interface{}
+}
+
 type Location struct {
-	Mutex        sync.RWMutex
+	Join         chan *User
+	Quit         chan *User
+	Message      chan UserAndEvent
+	CloseAll     chan bool
 	Url          string
 	Users        []*User
 	FileName     string
@@ -44,6 +53,10 @@ func GetLocation(url string) *Location {
 
 func NewLocation(url string) *Location {
 	loc := new(Location)
+	loc.Join = make(chan *User)
+	loc.Quit = make(chan *User)
+	loc.Message = make(chan UserAndEvent)
+	loc.CloseAll = make(chan bool)
 	loc.Url = url
 	b64fname := Base64Encode(url)
 	b64fname = b64fname[:MinInt(len(b64fname), 251)]
@@ -59,18 +72,111 @@ func NewLocation(url string) *Location {
 		loc.Surface = cairo.NewSurface(cairo.FormatArgB32, WIDTH, HEIGHT)
 	}
 	loc.Surface.SetSourceRGB(0, 0, 0)
+	go loc.main()
 	return loc
 }
 
+func (location *Location) main() {
+	save_tick := time.Tick(1 * time.Minute)
+	for {
+		select {
+		case user := <-location.Join:
+			location.AddUser(user)
+		case user := <-location.Quit:
+			location.RemoveUser(user)
+			if len(location.Users) == 0 {
+				location.Save()
+				location.Destroy()
+				return
+			}
+		case message := <-location.Message:
+			event := message.User.GotMessage(message.Event)
+			if event != nil {
+				location.broadcast(message.User, event)
+			}
+		case <-save_tick:
+			location.Save()
+		case <-location.CloseAll:
+			location.Save()
+			location.Destroy()
+			return
+		}
+	}
+}
+
+func (location *Location) Destroy() {
+	location.Surface.Finish()
+	location.Surface.Destroy()
+	LocationsMutex.Lock()
+	delete(Locations, location.Url)
+	LocationsMutex.Unlock()
+}
+
+func (location *Location) broadcast(user *User, event []interface{}) {
+	// event.insert(1, user.UserId) ...
+	event = append(event[:1], append([]interface{}{user.UserId}, event[1:]...)...)
+	for _, other := range location.Users {
+		other.SendEvent(event)
+	}
+}
+
 func (location *Location) AddUser(user *User) {
+	// Send the list of present users to this user:
+	timestamp := Timestamp()
+	for _, other := range location.Users {
+		user.SendEvent([]interface{}{
+			EventTypeJoin,
+			other.UserId,
+			[]interface{}{other.PositionX, other.PositionY},
+			[]interface{}{other.ColorRed, other.ColorGreen, other.ColorBlue},
+			other.MouseIsDown,
+			false, // not you
+			other.Nickname,
+			other.UsePen,
+			0, // no timestamp
+		})
+	}
+	// Send the delta between the image and now to the new user:
+	user.SendEvent([]interface{}{
+		EventTypeWelcome,
+		location.FileName,
+		location.GetDelta(),
+		location.Chat.GetMessages(),
+	})
+	// Send this new user to other users:
+	event := []interface{}{
+		EventTypeJoin,
+		[]interface{}{user.PositionX, user.PositionY},
+		[]interface{}{user.ColorRed, user.ColorGreen, user.ColorBlue},
+		user.MouseIsDown,
+		false, // not you
+		user.Nickname,
+		user.UsePen,
+		timestamp,
+	}
+	location.broadcast(user, event) // user is not yet in location.Users, so it will not receive this event.
+	// Send this user to himself
+	event = []interface{}{
+		EventTypeJoin,
+		user.UserId,
+		[]interface{}{user.PositionX, user.PositionY},
+		[]interface{}{user.ColorRed, user.ColorGreen, user.ColorBlue},
+		user.MouseIsDown,
+		true, // you
+		user.Nickname,
+		user.UsePen,
+		timestamp,
+	}
+	user.SendEvent(event)
 	location.Users = append(location.Users, user)
+	location.Chat.AddMessage(timestamp, "", "user "+user.Nickname+" joined")
 }
 
 func (location *Location) RemoveUser(user *User) {
 	location.Users = Remove(location.Users, user)
-	if len(location.Users) == 0 {
-		location.Save()
-	}
+	timestamp := Timestamp()
+	location.broadcast(user, []interface{}{EventTypeLeave, timestamp})
+	location.Chat.AddMessage(timestamp, "", "user "+user.Nickname+" left")
 }
 
 func (location *Location) DrawLine(x1, y1, x2, y2, duration, red, green, blue int, use_pen bool) {

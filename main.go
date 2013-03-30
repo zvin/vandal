@@ -50,17 +50,13 @@ func socket_handler(ws *websocket.Conn) {
 	LocationsMutex.Unlock()
 
 	user.Location = location
-	user.Location.Mutex.Lock()
 	if len(location.Users) >= MAX_USERS_PER_LOCATION {
 		user.Error("Too much users at this location, try adding #something at the end of the URL.")
-		user.Location.Mutex.Unlock()
 		sockets_wait.Done()
 		return
 	}
 	Log.Println("New user", user.UserId, "joins", user.Location.Url)
-	user.OnOpen()
-	user.Location.AddUser(user)
-	user.Location.Mutex.Unlock()
+	location.Join <- user
 
 	for {
 		var buf []byte
@@ -79,14 +75,10 @@ func socket_handler(ws *websocket.Conn) {
 			Log.Printf("this is not msgpack: '%v'\n", buf)
 			user.Error("Invalid message")
 		} else {
-			user.Location.Mutex.Lock()
-			user.GotMessage(v)
-			user.Location.Mutex.Unlock()
+			location.Message <- UserAndEvent{user, v}
 		}
 	}
-	user.Location.Mutex.Lock()
-	user.OnClose()
-	user.Location.Mutex.Unlock()
+	location.Quit <- user
 	ws.Close()
 	sockets_wait.Done()
 }
@@ -95,11 +87,7 @@ func signal_handler(c chan os.Signal) {
 	Log.Printf("signal %v\n", <-c)
 	LocationsMutex.Lock()
 	for _, loc := range Locations {
-		loc.Mutex.Lock()
-		for _, user := range loc.Users {
-			user.Socket.Close()
-		}
-		loc.Mutex.Unlock()
+		loc.CloseAll <- true
 	}
 	LocationsMutex.Unlock()
 	sockets_wait.Wait() // Wait until all websockets are closed
@@ -137,38 +125,23 @@ func index_handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func save_all_locations() {
-	LocationsMutex.Lock()
-	for _, location := range Locations {
-		location.Mutex.Lock()
-		location.Save()
-		if len(location.Users) == 0 {
-			delete(Locations, location.Url)
-			location.Surface.Finish()
-			location.Surface.Destroy()
-		}
-		location.Mutex.Unlock()
-	}
-	LocationsMutex.Unlock()
-}
-
-func update_currently_used_sites() {
-	var sites []Website
-	LocationsMutex.RLock()
-	for _, location := range Locations {
-		location.Mutex.RLock()
-		length := len(location.Users)
-		if length > 0 {
-			sites = append(sites, Website{Url: location.Url, UserCount: length})
-		}
-		location.Mutex.RUnlock()
-	}
-	LocationsMutex.RUnlock()
-	SortWebsites(sites)
-	currently_used_sites.Mutex.Lock()
-	currently_used_sites.Sites = sites[:MinInt(len(sites), 10)]
-	currently_used_sites.Mutex.Unlock()
-}
+//func update_currently_used_sites() {
+//	var sites []Website
+//	LocationsMutex.RLock()
+//	for _, location := range Locations {
+//		location.Mutex.RLock()
+//		length := len(location.Users)
+//		if length > 0 {
+//			sites = append(sites, Website{Url: location.Url, UserCount: length})
+//		}
+//		location.Mutex.RUnlock()
+//	}
+//	LocationsMutex.RUnlock()
+//	SortWebsites(sites)
+//	currently_used_sites.Mutex.Lock()
+//	currently_used_sites.Sites = sites[:MinInt(len(sites), 10)]
+//	currently_used_sites.Mutex.Unlock()
+//}
 
 func maxAgeHandler(seconds int, h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -183,19 +156,12 @@ func main() {
 	go signal_handler(SignalChan)
 	signal.Notify(SignalChan, os.Interrupt, os.Kill)
 
-	go func() {
-		tick := time.Tick(10 * time.Second)
-		for _ = range tick {
-			update_currently_used_sites()
-		}
-	}()
-
-	go func() {
-		tick := time.Tick(1 * time.Minute)
-		for _ = range tick {
-			save_all_locations()
-		}
-	}()
+	//	go func() {
+	//		tick := time.Tick(10 * time.Second)
+	//		for _ = range tick {
+	//			update_currently_used_sites()
+	//		}
+	//	}()
 
 	http.Handle("/ws", websocket.Handler(socket_handler))
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(STATIC_DIR))))
