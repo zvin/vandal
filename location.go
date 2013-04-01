@@ -26,7 +26,7 @@ type Location struct {
 	Join         chan *User
 	Quit         chan *User
 	Message      chan UserAndEvent
-	CloseAll     chan bool
+	Close        chan bool
 	Url          string
 	Users        []*User
 	FileName     string
@@ -41,6 +41,8 @@ func init() {
 }
 
 func GetLocation(url string) *Location {
+	LocationsMutex.Lock()
+	defer LocationsMutex.Unlock()
 	location, present := Locations[url]
 	if present {
 		return location
@@ -51,12 +53,28 @@ func GetLocation(url string) *Location {
 	return location
 }
 
+func CloseAllLocations() {
+	LocationsMutex.Lock()
+	for _, loc := range Locations {
+		loc.Close <- true
+		<- loc.Close
+		delete(Locations, loc.Url)
+	}
+	LocationsMutex.Unlock()
+}
+
+func CloseLocation(location *Location) {
+	LocationsMutex.Lock()
+	delete(Locations, location.Url)
+	LocationsMutex.Unlock()
+}
+
 func NewLocation(url string) *Location {
 	loc := new(Location)
 	loc.Join = make(chan *User)
 	loc.Quit = make(chan *User)
 	loc.Message = make(chan UserAndEvent)
-	loc.CloseAll = make(chan bool)
+	loc.Close = make(chan bool)
 	loc.Url = url
 	b64fname := Base64Encode(url)
 	b64fname = b64fname[:MinInt(len(b64fname), 251)]
@@ -87,6 +105,7 @@ func (location *Location) main() {
 			if len(location.Users) == 0 {
 				location.Save()
 				location.Destroy()
+				CloseLocation(location)
 				return
 			}
 		case message := <-location.Message:
@@ -96,9 +115,13 @@ func (location *Location) main() {
 			}
 		case <-save_tick:
 			location.Save()
-		case <-location.CloseAll:
+		case <-location.Close:
+			for _, user := range location.Users {
+				user.Socket.Close()
+			}
 			location.Save()
 			location.Destroy()
+			location.Close <- true
 			return
 		}
 	}
@@ -107,9 +130,6 @@ func (location *Location) main() {
 func (location *Location) Destroy() {
 	location.Surface.Finish()
 	location.Surface.Destroy()
-	LocationsMutex.Lock()
-	delete(Locations, location.Url)
-	LocationsMutex.Unlock()
 }
 
 func (location *Location) broadcast(user *User, event []interface{}) {

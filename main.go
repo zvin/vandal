@@ -12,7 +12,6 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
-	"sync"
 	"time"
 )
 
@@ -26,14 +25,12 @@ const (
 var (
 	port                 *int  = flag.Int("p", 8000, "Port to listen.")
 	foreground           *bool = flag.Bool("f", false, "Log on stdout.")
-	sockets_wait         sync.WaitGroup
 	index_template       = template.Must(template.ParseFiles("templates/index.html"))
 	currently_used_sites LockableWebsiteSlice
 	Log                  *log.Logger
 )
 
 func socket_handler(ws *websocket.Conn) {
-	sockets_wait.Add(1)
 
 	user := NewUser(ws)
 
@@ -41,18 +38,14 @@ func socket_handler(ws *websocket.Conn) {
 	location_url, err := url.QueryUnescape(ws.Request().RequestURI[6:]) // skip "/ws?u="
 	if err != nil {
 		user.Error("Invalid query")
-		sockets_wait.Done()
 		return
 	}
 
-	LocationsMutex.Lock()
 	location := GetLocation(location_url)
-	LocationsMutex.Unlock()
 
 	user.Location = location
 	if len(location.Users) >= MAX_USERS_PER_LOCATION {
 		user.Error("Too much users at this location, try adding #something at the end of the URL.")
-		sockets_wait.Done()
 		return
 	}
 	Log.Println("New user", user.UserId, "joins", user.Location.Url)
@@ -80,17 +73,11 @@ func socket_handler(ws *websocket.Conn) {
 	}
 	location.Quit <- user
 	ws.Close()
-	sockets_wait.Done()
 }
 
 func signal_handler(c chan os.Signal) {
 	Log.Printf("signal %v\n", <-c)
-	LocationsMutex.Lock()
-	for _, loc := range Locations {
-		loc.CloseAll <- true
-	}
-	LocationsMutex.Unlock()
-	sockets_wait.Wait() // Wait until all websockets are closed
+	CloseAllLocations()
 	// Why do we become a daemon here ?
 	Log.Printf("exit\n")
 	os.Exit(0)
