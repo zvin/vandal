@@ -29,12 +29,12 @@ type Location struct {
 	Message      chan UserAndEvent
 	Close        chan bool
 	Url          string
-	Users        []*User
 	UserCount    int
-	FileName     string
-	chatFileName string
 	Chat         *MessagesLog
-	Surface      *cairo.Surface
+	users        []*User
+	fileName     string
+	chatFileName string
+	surface      *cairo.Surface
 	delta        []interface{}
 }
 
@@ -104,15 +104,15 @@ func NewLocation(url string) *Location {
 	b64fname = strings.Replace(b64fname, "/", "_", -1)
 	loc.chatFileName = CHAT_DIR + "/" + b64fname + ".gob"
 	loc.Chat = OpenMessagesLog(loc.chatFileName)
-	loc.FileName = IMAGES_DIR + "/" + b64fname + ".png" // filename
-	Log.Printf("filename: %v", loc.FileName)
-	loc.Surface = cairo.NewSurfaceFromPNG(loc.FileName)
-	if loc.Surface.SurfaceStatus() != 0 {
-		loc.Surface.Finish()
-		loc.Surface.Destroy()
-		loc.Surface = cairo.NewSurface(cairo.FormatArgB32, WIDTH, HEIGHT)
+	loc.fileName = IMAGES_DIR + "/" + b64fname + ".png" // filename
+	Log.Printf("filename: %v", loc.fileName)
+	loc.surface = cairo.NewSurfaceFromPNG(loc.fileName)
+	if loc.surface.SurfaceStatus() != 0 {
+		loc.surface.Finish()
+		loc.surface.Destroy()
+		loc.surface = cairo.NewSurface(cairo.FormatArgB32, WIDTH, HEIGHT)
 	}
-	loc.Surface.SetSourceRGB(0, 0, 0)
+	loc.surface.SetSourceRGB(0, 0, 0)
 	go loc.main()
 	return loc
 }
@@ -122,7 +122,7 @@ func (location *Location) main() {
 	for {
 		select {
 		case user := <-location.Join:
-			if len(location.Users) >= MAX_USERS_PER_LOCATION {
+			if len(location.users) >= MAX_USERS_PER_LOCATION {
 				user.Error("Too much users at this location, try adding #something at the end of the URL.")
 			} else {
 				Log.Println("New user", user.UserId, "joins", location.Url)
@@ -130,7 +130,7 @@ func (location *Location) main() {
 			}
 		case user := <-location.Quit:
 			location.RemoveUser(user)
-			if len(location.Users) == 0 {
+			if len(location.users) == 0 {
 				location.Save()
 				location.Destroy()
 				CloseLocation(location)
@@ -144,7 +144,7 @@ func (location *Location) main() {
 		case <-save_tick:
 			location.Save()
 		case <-location.Close:
-			for _, user := range location.Users {
+			for _, user := range location.users {
 				user.Socket.Close()
 			}
 			location.Save()
@@ -156,14 +156,14 @@ func (location *Location) main() {
 }
 
 func (location *Location) Destroy() {
-	location.Surface.Finish()
-	location.Surface.Destroy()
+	location.surface.Finish()
+	location.surface.Destroy()
 }
 
 func (location *Location) broadcast(user *User, event []interface{}) {
 	// event.insert(1, user.UserId) ...
 	event = append(event[:1], append([]interface{}{user.UserId}, event[1:]...)...)
-	for _, other := range location.Users {
+	for _, other := range location.users {
 		other.SendEvent(event)
 	}
 }
@@ -172,7 +172,7 @@ func (location *Location) AddUser(user *User) {
 	user.Location = location
 	// Send the list of present users to this user:
 	timestamp := Timestamp()
-	for _, other := range location.Users {
+	for _, other := range location.users {
 		user.SendEvent([]interface{}{
 			EventTypeJoin,
 			other.UserId,
@@ -188,7 +188,7 @@ func (location *Location) AddUser(user *User) {
 	// Send the delta between the image and now to the new user:
 	user.SendEvent([]interface{}{
 		EventTypeWelcome,
-		location.FileName,
+		location.fileName,
 		location.GetDelta(),
 		location.Chat.GetMessages(),
 	})
@@ -203,7 +203,7 @@ func (location *Location) AddUser(user *User) {
 		user.UsePen,
 		timestamp,
 	}
-	location.broadcast(user, event) // user is not yet in location.Users, so it will not receive this event.
+	location.broadcast(user, event) // user is not yet in location.users, so it will not receive this event.
 	// Send this user to himself
 	event = []interface{}{
 		EventTypeJoin,
@@ -217,13 +217,13 @@ func (location *Location) AddUser(user *User) {
 		timestamp,
 	}
 	user.SendEvent(event)
-	location.Users = append(location.Users, user)
+	location.users = append(location.users, user)
 	location.Chat.AddMessage(timestamp, "", "user "+user.Nickname+" joined")
 	location.UserCount += 1
 }
 
 func (location *Location) RemoveUser(user *User) {
-	location.Users = Remove(location.Users, user)
+	location.users = Remove(location.users, user)
 	timestamp := Timestamp()
 	location.broadcast(user, []interface{}{EventTypeLeave, timestamp})
 	location.Chat.AddMessage(timestamp, "", "user "+user.Nickname+" left")
@@ -242,15 +242,15 @@ func (location *Location) DrawLine(x1, y1, x2, y2, duration, red, green, blue in
 	location.delta = append(location.delta, []interface{}{x1, y1, x2, y2, duration, red, green, blue, use_pen})
 	speed := d / float64(duration)
 	if !use_pen { // not use_pen: use eraser
-		location.Surface.SetOperator(cairo.OperatorDestOut)
+		location.surface.SetOperator(cairo.OperatorDestOut)
 	} else {
-		location.Surface.SetOperator(cairo.OperatorOver)
-		location.Surface.SetSourceRGB(float64(red)/255., float64(green)/255., float64(blue)/255.)
+		location.surface.SetOperator(cairo.OperatorOver)
+		location.surface.SetSourceRGB(float64(red)/255., float64(green)/255., float64(blue)/255.)
 	}
-	location.Surface.SetLineWidth(1. / (1.3 + (3. * speed)))
-	location.Surface.MoveTo(float64(x1), float64(y1))
-	location.Surface.LineTo(float64(x2), float64(y2))
-	location.Surface.Stroke()
+	location.surface.SetLineWidth(1. / (1.3 + (3. * speed)))
+	location.surface.MoveTo(float64(x1), float64(y1))
+	location.surface.LineTo(float64(x2), float64(y2))
+	location.surface.Stroke()
 }
 
 func (location *Location) GetDelta() []interface{} {
@@ -260,7 +260,7 @@ func (location *Location) GetDelta() []interface{} {
 func (location *Location) Save() {
 	if len(location.delta) > 0 {
 		Log.Printf("save %s (delta %d)\n", location.Url, len(location.delta))
-		location.Surface.WriteToPNG(location.FileName) // Output to PNG
+		location.surface.WriteToPNG(location.fileName) // Output to PNG
 		location.delta = nil
 	}
 	location.Chat.Save()
