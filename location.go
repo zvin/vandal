@@ -13,8 +13,9 @@ const (
 )
 
 var (
-	Locations      map[string]*Location
-	LocationsMutex sync.RWMutex
+	locations          = make(map[string]*Location)
+	locationsMutex     sync.RWMutex
+	CurrentlyUsedSites LockableWebsiteSlice
 )
 
 type UserAndEvent struct {
@@ -29,6 +30,7 @@ type Location struct {
 	Close        chan bool
 	Url          string
 	Users        []*User
+	UserCount    int
 	FileName     string
 	chatFileName string
 	Chat         *MessagesLog
@@ -37,36 +39,57 @@ type Location struct {
 }
 
 func init() {
-	Locations = make(map[string]*Location)
+	go func() {
+		tick := time.Tick(10 * time.Second)
+		for _ = range tick {
+			update_currently_used_sites()
+		}
+	}()
 }
 
 func GetLocation(url string) *Location {
-	LocationsMutex.Lock()
-	defer LocationsMutex.Unlock()
-	location, present := Locations[url]
+	locationsMutex.Lock()
+	defer locationsMutex.Unlock()
+	location, present := locations[url]
 	if present {
 		return location
 	} else {
 		location = NewLocation(url)
-		Locations[url] = location
+		locations[url] = location
 	}
 	return location
 }
 
 func CloseAllLocations() {
-	LocationsMutex.Lock()
-	for _, loc := range Locations {
+	locationsMutex.Lock()
+	for _, loc := range locations {
 		loc.Close <- true
 		<-loc.Close
-		delete(Locations, loc.Url)
+		delete(locations, loc.Url)
 	}
-	LocationsMutex.Unlock()
+	locationsMutex.Unlock()
 }
 
 func CloseLocation(location *Location) {
-	LocationsMutex.Lock()
-	delete(Locations, location.Url)
-	LocationsMutex.Unlock()
+	locationsMutex.Lock()
+	delete(locations, location.Url)
+	locationsMutex.Unlock()
+}
+
+func update_currently_used_sites() {
+	var sites []Website
+	locationsMutex.RLock()
+	for _, location := range locations {
+		count := location.UserCount
+		if count > 0 {
+			sites = append(sites, Website{Url: location.Url, UserCount: count})
+		}
+	}
+	locationsMutex.RUnlock()
+	SortWebsites(sites)
+	CurrentlyUsedSites.Mutex.Lock()
+	CurrentlyUsedSites.Sites = sites[:MinInt(len(sites), 10)]
+	CurrentlyUsedSites.Mutex.Unlock()
 }
 
 func NewLocation(url string) *Location {
@@ -196,6 +219,7 @@ func (location *Location) AddUser(user *User) {
 	user.SendEvent(event)
 	location.Users = append(location.Users, user)
 	location.Chat.AddMessage(timestamp, "", "user "+user.Nickname+" joined")
+	location.UserCount += 1
 }
 
 func (location *Location) RemoveUser(user *User) {
@@ -203,6 +227,7 @@ func (location *Location) RemoveUser(user *User) {
 	timestamp := Timestamp()
 	location.broadcast(user, []interface{}{EventTypeLeave, timestamp})
 	location.Chat.AddMessage(timestamp, "", "user "+user.Nickname+" left")
+	location.UserCount -= 1
 }
 
 func (location *Location) DrawLine(x1, y1, x2, y2, duration, red, green, blue int, use_pen bool) {

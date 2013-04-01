@@ -23,11 +23,10 @@ const (
 )
 
 var (
-	port                 *int  = flag.Int("p", 8000, "Port to listen.")
-	foreground           *bool = flag.Bool("f", false, "Log on stdout.")
-	index_template             = template.Must(template.ParseFiles("templates/index.html"))
-	currently_used_sites LockableWebsiteSlice
-	Log                  *log.Logger
+	port           *int  = flag.Int("p", 8000, "Port to listen.")
+	foreground     *bool = flag.Bool("f", false, "Log on stdout.")
+	index_template       = template.Must(template.ParseFiles("templates/index.html"))
+	Log            *log.Logger
 )
 
 func socket_handler(ws *websocket.Conn) {
@@ -44,9 +43,10 @@ func socket_handler(ws *websocket.Conn) {
 	location := GetLocation(location_url)
 	location.Join <- user
 
+	var buffer []byte
+	var event []interface{}
 	for {
-		var buf []byte
-		err := websocket.Message.Receive(ws, &buf)
+		err := websocket.Message.Receive(ws, &buffer)
 		if err != nil {
 			if err.Error() == "EOF" {
 				Log.Printf("User %v closed connection.\n", user.UserId)
@@ -55,13 +55,12 @@ func socket_handler(ws *websocket.Conn) {
 			}
 			break
 		}
-		var v []interface{}
-		err = msgpack.Unmarshal(buf, &v, nil)
+		err = msgpack.Unmarshal(buffer, &event, nil)
 		if err != nil {
-			Log.Printf("this is not msgpack: '%v'\n", buf)
+			Log.Printf("this is not msgpack: '%v'\n", buffer)
 			user.Error("Invalid message")
 		} else {
-			location.Message <- UserAndEvent{user, v}
+			location.Message <- UserAndEvent{user, event}
 		}
 	}
 	location.Quit <- user
@@ -97,31 +96,13 @@ func init() {
 }
 
 func index_handler(w http.ResponseWriter, r *http.Request) {
-	currently_used_sites.Mutex.RLock()
-	err := index_template.Execute(w, currently_used_sites.Sites)
-	currently_used_sites.Mutex.RUnlock()
+	CurrentlyUsedSites.Mutex.RLock()
+	err := index_template.Execute(w, CurrentlyUsedSites.Sites)
+	CurrentlyUsedSites.Mutex.RUnlock()
 	if err != nil {
 		Log.Printf("Couldn't execute template: %v\n", err)
 	}
 }
-
-//func update_currently_used_sites() {
-//	var sites []Website
-//	LocationsMutex.RLock()
-//	for _, location := range Locations {
-//		location.Mutex.RLock()
-//		length := len(location.Users)
-//		if length > 0 {
-//			sites = append(sites, Website{Url: location.Url, UserCount: length})
-//		}
-//		location.Mutex.RUnlock()
-//	}
-//	LocationsMutex.RUnlock()
-//	SortWebsites(sites)
-//	currently_used_sites.Mutex.Lock()
-//	currently_used_sites.Sites = sites[:MinInt(len(sites), 10)]
-//	currently_used_sites.Mutex.Unlock()
-//}
 
 func maxAgeHandler(seconds int, h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -135,13 +116,6 @@ func main() {
 	SignalChan := make(chan os.Signal)
 	go signal_handler(SignalChan)
 	signal.Notify(SignalChan, os.Interrupt, os.Kill)
-
-	//	go func() {
-	//		tick := time.Tick(10 * time.Second)
-	//		for _ = range tick {
-	//			update_currently_used_sites()
-	//		}
-	//	}()
 
 	http.Handle("/ws", websocket.Handler(socket_handler))
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(STATIC_DIR))))
