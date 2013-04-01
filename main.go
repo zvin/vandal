@@ -25,7 +25,7 @@ const (
 var (
 	port                 *int  = flag.Int("p", 8000, "Port to listen.")
 	foreground           *bool = flag.Bool("f", false, "Log on stdout.")
-	index_template       = template.Must(template.ParseFiles("templates/index.html"))
+	index_template             = template.Must(template.ParseFiles("templates/index.html"))
 	currently_used_sites LockableWebsiteSlice
 	Log                  *log.Logger
 )
@@ -42,13 +42,6 @@ func socket_handler(ws *websocket.Conn) {
 	}
 
 	location := GetLocation(location_url)
-
-	user.Location = location
-	if len(location.Users) >= MAX_USERS_PER_LOCATION {
-		user.Error("Too much users at this location, try adding #something at the end of the URL.")
-		return
-	}
-	Log.Println("New user", user.UserId, "joins", user.Location.Url)
 	location.Join <- user
 
 	for {

@@ -57,7 +57,7 @@ func CloseAllLocations() {
 	LocationsMutex.Lock()
 	for _, loc := range Locations {
 		loc.Close <- true
-		<- loc.Close
+		<-loc.Close
 		delete(Locations, loc.Url)
 	}
 	LocationsMutex.Unlock()
@@ -99,7 +99,12 @@ func (location *Location) main() {
 	for {
 		select {
 		case user := <-location.Join:
-			location.AddUser(user)
+			if len(location.Users) >= MAX_USERS_PER_LOCATION {
+				user.Error("Too much users at this location, try adding #something at the end of the URL.")
+			} else {
+				Log.Println("New user", user.UserId, "joins", location.Url)
+				location.AddUser(user)
+			}
 		case user := <-location.Quit:
 			location.RemoveUser(user)
 			if len(location.Users) == 0 {
@@ -141,6 +146,7 @@ func (location *Location) broadcast(user *User, event []interface{}) {
 }
 
 func (location *Location) AddUser(user *User) {
+	user.Location = location
 	// Send the list of present users to this user:
 	timestamp := Timestamp()
 	for _, other := range location.Users {
