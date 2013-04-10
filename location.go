@@ -127,6 +127,7 @@ func (location *Location) main() {
 			} else {
 				Log.Println("New user", user.UserId, "joins", location.Url)
 				location.AddUser(user)
+				go user.SocketHandler()
 			}
 		case user := <-location.Quit:
 			location.RemoveUser(user)

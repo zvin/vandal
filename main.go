@@ -4,7 +4,6 @@ import (
 	"code.google.com/p/go.net/websocket"
 	"flag"
 	"fmt"
-	"github.com/ugorji/go-msgpack"
 	"html/template"
 	"io"
 	"log"
@@ -42,29 +41,7 @@ func socket_handler(ws *websocket.Conn) {
 
 	location := GetLocation(location_url)
 	location.Join <- user
-
-	var buffer []byte
-	var event []interface{}
-	for {
-		err := websocket.Message.Receive(ws, &buffer)
-		if err != nil {
-			if err.Error() == "EOF" {
-				Log.Printf("User %v closed connection.\n", user.UserId)
-			} else {
-				Log.Printf("error while reading socket for user %v: %v\n", user.UserId, err)
-			}
-			break
-		}
-		err = msgpack.Unmarshal(buffer, &event, nil)
-		if err != nil {
-			Log.Printf("this is not msgpack: '%v'\n", buffer)
-			user.Error("Invalid message")
-		} else {
-			location.Message <- UserAndEvent{user, event}
-		}
-	}
-	location.Quit <- user
-	ws.Close()
+	<-location.Join // UGLY
 }
 
 func signal_handler(c chan os.Signal) {
