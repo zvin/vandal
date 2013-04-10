@@ -29,7 +29,7 @@ var (
 )
 
 type JoinRequest struct {
-	user *User
+	user       *User
 	resultChan chan bool
 }
 
@@ -47,7 +47,7 @@ func socket_handler(ws *websocket.Conn) {
 	location := GetLocation(location_url)
 	request := &JoinRequest{user, make(chan bool)}
 	location.Join <- request
-	user_joined := <- request.resultChan
+	user_joined := <-request.resultChan
 	if user_joined {
 		user.SocketHandler()
 	} else {

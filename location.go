@@ -123,7 +123,7 @@ func (location *Location) main() {
 		select {
 		case request := <-location.Join:
 			if len(location.users) >= MAX_USERS_PER_LOCATION {
-			    request.resultChan <- false
+				request.resultChan <- false
 			} else {
 				Log.Println("New user", request.user.UserId, "joins", location.Url)
 				location.AddUser(request.user)
