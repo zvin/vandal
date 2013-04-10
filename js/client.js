@@ -95,8 +95,7 @@ function create_socket(){
     )
     mySocket.onmessage = function(e){decode_msgpack(e.data)}
     mySocket.onclose = function(){
-        alert("Connection to the server closed, please reload.")
-        destroy()
+        warning_box.style.display = "block"
     }
     canvas = create_element("canvas", {
         "position": "absolute",
@@ -173,7 +172,6 @@ function gotmessage(event){
         user_id, user
     if (type == EventType.error){
         alert(event[0])
-        document.location.reload()
     }
     if (type != EventType.welcome){
         user_id = event.shift()
