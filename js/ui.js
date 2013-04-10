@@ -178,6 +178,33 @@ function create_loading_box(){
     document.body.appendChild(loading_box)
 }
 
+function create_warning_box(){
+	warning_box = create_element("div", {
+        "position"        : "fixed",
+        "top"             : "50%",
+        "left"            : "50%",
+        "margin-left"     : "-150px",
+        "margin-top"      : "-25px",
+        "width"           : "300px",
+        "height"          : "50px",
+        "border"          : "6px solid red",
+        "background-color": "white",
+        "color"           : "red",
+        "padding"         : "10px",
+        "font-family"     : "Arial, Helvetica, sans-serif",
+        "font-size"       : "36px",
+        "font-weight"     : "normal",
+        "font-variant"    : "normal",
+        "font-style"      : "normal",
+        "line-height"     : "50px",
+        "text-align"      : "center",
+        "display"         : "none",
+        "z-index"         :  reverse_zindex(0)
+    })
+    warning_box.appendChild(document.createTextNode("Disconnected"))
+    document.body.appendChild(warning_box)
+}
+
 function set_loading_on(){
 	loading_box.style.display = "block"
 }

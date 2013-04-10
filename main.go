@@ -4,7 +4,6 @@ import (
 	"code.google.com/p/go.net/websocket"
 	"flag"
 	"fmt"
-	"github.com/ugorji/go-msgpack"
 	"html/template"
 	"io"
 	"log"
@@ -12,7 +11,6 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
-	"sync"
 	"time"
 )
 
@@ -24,16 +22,18 @@ const (
 )
 
 var (
-	port                 *int  = flag.Int("p", 8000, "Port to listen.")
-	foreground           *bool = flag.Bool("f", false, "Log on stdout.")
-	sockets_wait         sync.WaitGroup
+	port           *int  = flag.Int("p", 8000, "Port to listen.")
+	foreground     *bool = flag.Bool("f", false, "Log on stdout.")
 	index_template       = template.Must(template.ParseFiles("templates/index.html"))
-	currently_used_sites LockableWebsiteSlice
-	Log                  *log.Logger
+	Log            *log.Logger
 )
 
+type JoinRequest struct {
+	user       *User
+	resultChan chan bool
+}
+
 func socket_handler(ws *websocket.Conn) {
-	sockets_wait.Add(1)
 
 	user := NewUser(ws)
 
@@ -41,68 +41,23 @@ func socket_handler(ws *websocket.Conn) {
 	location_url, err := url.QueryUnescape(ws.Request().RequestURI[6:]) // skip "/ws?u="
 	if err != nil {
 		user.Error("Invalid query")
-		sockets_wait.Done()
 		return
 	}
 
-	LocationsMutex.Lock()
 	location := GetLocation(location_url)
-	LocationsMutex.Unlock()
-
-	user.Location = location
-	user.Location.Mutex.Lock()
-	if len(location.Users) >= MAX_USERS_PER_LOCATION {
+	request := &JoinRequest{user, make(chan bool)}
+	location.Join <- request
+	user_joined := <-request.resultChan
+	if user_joined {
+		user.SocketHandler()
+	} else {
 		user.Error("Too much users at this location, try adding #something at the end of the URL.")
-		user.Location.Mutex.Unlock()
-		sockets_wait.Done()
-		return
 	}
-	Log.Println("New user", user.UserId, "joins", user.Location.Url)
-	user.OnOpen()
-	user.Location.AddUser(user)
-	user.Location.Mutex.Unlock()
-
-	for {
-		var buf []byte
-		err := websocket.Message.Receive(ws, &buf)
-		if err != nil {
-			if err.Error() == "EOF" {
-				Log.Printf("User %v closed connection.\n", user.UserId)
-			} else {
-				Log.Printf("error while reading socket for user %v: %v\n", user.UserId, err)
-			}
-			break
-		}
-		var v []interface{}
-		err = msgpack.Unmarshal(buf, &v, nil)
-		if err != nil {
-			Log.Printf("this is not msgpack: '%v'\n", buf)
-			user.Error("Invalid message")
-		} else {
-			user.Location.Mutex.Lock()
-			user.GotMessage(v)
-			user.Location.Mutex.Unlock()
-		}
-	}
-	user.Location.Mutex.Lock()
-	user.OnClose()
-	user.Location.Mutex.Unlock()
-	ws.Close()
-	sockets_wait.Done()
 }
 
 func signal_handler(c chan os.Signal) {
 	Log.Printf("signal %v\n", <-c)
-	LocationsMutex.Lock()
-	for _, loc := range Locations {
-		loc.Mutex.Lock()
-		for _, user := range loc.Users {
-			user.Socket.Close()
-		}
-		loc.Mutex.Unlock()
-	}
-	LocationsMutex.Unlock()
-	sockets_wait.Wait() // Wait until all websockets are closed
+	CloseAllLocations()
 	// Why do we become a daemon here ?
 	Log.Printf("exit\n")
 	os.Exit(0)
@@ -129,45 +84,12 @@ func init() {
 }
 
 func index_handler(w http.ResponseWriter, r *http.Request) {
-	currently_used_sites.Mutex.RLock()
-	err := index_template.Execute(w, currently_used_sites.Sites)
-	currently_used_sites.Mutex.RUnlock()
+	CurrentlyUsedSites.Mutex.RLock()
+	err := index_template.Execute(w, CurrentlyUsedSites.Sites)
+	CurrentlyUsedSites.Mutex.RUnlock()
 	if err != nil {
 		Log.Printf("Couldn't execute template: %v\n", err)
 	}
-}
-
-func save_all_locations() {
-	LocationsMutex.Lock()
-	for _, location := range Locations {
-		location.Mutex.Lock()
-		location.Save()
-		if len(location.Users) == 0 {
-			delete(Locations, location.Url)
-			location.Surface.Finish()
-			location.Surface.Destroy()
-		}
-		location.Mutex.Unlock()
-	}
-	LocationsMutex.Unlock()
-}
-
-func update_currently_used_sites() {
-	var sites []Website
-	LocationsMutex.RLock()
-	for _, location := range Locations {
-		location.Mutex.RLock()
-		length := len(location.Users)
-		if length > 0 {
-			sites = append(sites, Website{Url: location.Url, UserCount: length})
-		}
-		location.Mutex.RUnlock()
-	}
-	LocationsMutex.RUnlock()
-	SortWebsites(sites)
-	currently_used_sites.Mutex.Lock()
-	currently_used_sites.Sites = sites[:MinInt(len(sites), 10)]
-	currently_used_sites.Mutex.Unlock()
 }
 
 func maxAgeHandler(seconds int, h http.Handler) http.Handler {
@@ -182,20 +104,6 @@ func main() {
 	SignalChan := make(chan os.Signal)
 	go signal_handler(SignalChan)
 	signal.Notify(SignalChan, os.Interrupt, os.Kill)
-
-	go func() {
-		tick := time.Tick(10 * time.Second)
-		for _ = range tick {
-			update_currently_used_sites()
-		}
-	}()
-
-	go func() {
-		tick := time.Tick(1 * time.Minute)
-		for _ = range tick {
-			save_all_locations()
-		}
-	}()
 
 	http.Handle("/ws", websocket.Handler(socket_handler))
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(STATIC_DIR))))

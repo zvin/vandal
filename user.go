@@ -8,7 +8,7 @@ import (
 
 const (
 	MAX_USERS_PER_LOCATION = 20
-	MAX_NICKNAME_LENGTH = 20
+	MAX_NICKNAME_LENGTH    = 20
 )
 
 var userIdGenerator chan int
@@ -55,7 +55,7 @@ func encodeEvent(event []interface{}) ([]byte, error) {
 	return result, err
 }
 
-func (user *User) sendEvent(event []interface{}) {
+func (user *User) SendEvent(event []interface{}) {
 	//    fmt.Printf("sending %v\n", event)
 	//    fmt.Printf("sending %v to %d %#v\n", encodeEvent(event), user.UserId, user.Socket)
 	data, err := encodeEvent(event)
@@ -69,19 +69,11 @@ func (user *User) sendEvent(event []interface{}) {
 }
 
 func (user *User) Error(description string) {
-	user.sendEvent([]interface{}{
+	user.SendEvent([]interface{}{
 		EventTypeError,
 		description,
 	})
 	user.Socket.Close()
-}
-
-func (user *User) broadcast(event []interface{}) {
-	// event.insert(1, user.UserId) ...
-	event = append(event[:1], append([]interface{}{user.UserId}, event[1:]...)...)
-	for _, other := range user.Location.Users {
-		other.sendEvent(event)
-	}
 }
 
 func (user *User) mouseMove(x int, y int, duration int) {
@@ -126,11 +118,11 @@ func (user *User) chatMessage(msg string, timestamp int64) {
 	user.Location.Chat.AddMessage(timestamp, user.Nickname, msg)
 }
 
-func (user *User) GotMessage(event []interface{}) {
+func (user *User) GotMessage(event []interface{}) []interface{} {
 	event_type, err := ToInt(event[0])
 	if err != nil {
 		user.Error("Invalid event type")
-		return
+		return nil
 	}
 	params := event[1:]
 	switch event_type {
@@ -140,7 +132,7 @@ func (user *User) GotMessage(event []interface{}) {
 		p2, err2 := ToInt(params[2])
 		if err0 != nil || err1 != nil || err2 != nil {
 			user.Error("Invalid mouse move")
-			return
+			return nil
 		}
 		user.mouseMove(p0, p1, p2)
 	case EventTypeMouseUp:
@@ -155,7 +147,7 @@ func (user *User) GotMessage(event []interface{}) {
 		p2, err2 := ToInt(params[2])
 		if err0 != nil || err1 != nil || err2 != nil {
 			user.Error("Invalid color")
-			return
+			return nil
 		}
 		user.changeColor(p0, p1, p2)
 	case EventTypeChangeNickname:
@@ -166,70 +158,37 @@ func (user *User) GotMessage(event []interface{}) {
 			event = append(event, timestamp)
 		} else {
 			user.Error("Nickname too long")
-			return
+			return nil
 		}
 	case EventTypeChatMessage:
 		timestamp := Timestamp()
 		user.chatMessage(params[0].(string), timestamp)
 		event = append(event, timestamp)
 	}
-	user.broadcast(event)
+	return event
 }
 
-func (user *User) OnOpen() {
-	// Send the list of present users to this user:
-	timestamp := Timestamp()
-	for _, other := range user.Location.Users {
-		user.sendEvent([]interface{}{
-			EventTypeJoin,
-			other.UserId,
-			[]interface{}{other.PositionX, other.PositionY},
-			[]interface{}{other.ColorRed, other.ColorGreen, other.ColorBlue},
-			other.MouseIsDown,
-			false, // not you
-			other.Nickname,
-			other.UsePen,
-			0, // no timestamp
-		})
+func (user *User) SocketHandler() {
+	var buffer []byte
+	for {
+		err := websocket.Message.Receive(user.Socket, &buffer)
+		if err != nil {
+			if err.Error() == "EOF" {
+				Log.Printf("User %v closed connection.\n", user.UserId)
+			} else {
+				Log.Printf("error while reading socket for user %v: %v\n", user.UserId, err)
+			}
+			break
+		}
+		var event []interface{}
+		err = msgpack.Unmarshal(buffer, &event, nil)
+		if err != nil {
+			Log.Printf("this is not msgpack: '%v' %v\n", buffer, err)
+			user.Error("Invalid message")
+		} else {
+			user.Location.Message <- UserAndEvent{user, event}
+		}
 	}
-	// Send the delta between the image and now to the new user:
-	user.sendEvent([]interface{}{
-		EventTypeWelcome,
-		user.Location.FileName,
-		user.Location.GetDelta(),
-		user.Location.Chat.GetMessages(),
-	})
-	// Send this new user to other users:
-	event := []interface{}{
-		EventTypeJoin,
-		[]interface{}{user.PositionX, user.PositionY},
-		[]interface{}{user.ColorRed, user.ColorGreen, user.ColorBlue},
-		user.MouseIsDown,
-		false, // not you
-		user.Nickname,
-		user.UsePen,
-		timestamp,
-	}
-	user.broadcast(event) // user is not yet in location.Users, so it will not receive this event.
-	// Send this user to himself
-	event = []interface{}{
-		EventTypeJoin,
-		user.UserId,
-		[]interface{}{user.PositionX, user.PositionY},
-		[]interface{}{user.ColorRed, user.ColorGreen, user.ColorBlue},
-		user.MouseIsDown,
-		true, // you
-		user.Nickname,
-		user.UsePen,
-		timestamp,
-	}
-	user.sendEvent(event)
-	user.Location.Chat.AddMessage(timestamp, "", "user "+user.Nickname+" joined")
-}
-
-func (user *User) OnClose() {
-	timestamp := Timestamp()
-	user.broadcast([]interface{}{EventTypeLeave, timestamp})
-	user.Location.Chat.AddMessage(timestamp, "", "user "+user.Nickname+" left")
-	user.Location.RemoveUser(user)
+	user.Location.Quit <- user
+	user.Socket.Close()
 }
