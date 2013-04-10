@@ -28,6 +28,11 @@ var (
 	Log            *log.Logger
 )
 
+type JoinRequest struct {
+	user *User
+	resultChan chan bool
+}
+
 func socket_handler(ws *websocket.Conn) {
 
 	user := NewUser(ws)
@@ -40,8 +45,14 @@ func socket_handler(ws *websocket.Conn) {
 	}
 
 	location := GetLocation(location_url)
-	location.Join <- user
-	<-location.Join // UGLY
+	request := &JoinRequest{user, make(chan bool)}
+	location.Join <- request
+	user_joined := <- request.resultChan
+	if user_joined {
+		user.SocketHandler()
+	} else {
+		user.Error("Too much users at this location, try adding #something at the end of the URL.")
+	}
 }
 
 func signal_handler(c chan os.Signal) {

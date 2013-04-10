@@ -24,7 +24,7 @@ type UserAndEvent struct {
 }
 
 type Location struct {
-	Join         chan *User
+	Join         chan *JoinRequest
 	Quit         chan *User
 	Message      chan UserAndEvent
 	Close        chan bool
@@ -94,7 +94,7 @@ func update_currently_used_sites() {
 
 func NewLocation(url string) *Location {
 	loc := new(Location)
-	loc.Join = make(chan *User)
+	loc.Join = make(chan *JoinRequest)
 	loc.Quit = make(chan *User)
 	loc.Message = make(chan UserAndEvent)
 	loc.Close = make(chan bool)
@@ -121,13 +121,13 @@ func (location *Location) main() {
 	save_tick := time.Tick(1 * time.Minute)
 	for {
 		select {
-		case user := <-location.Join:
+		case request := <-location.Join:
 			if len(location.users) >= MAX_USERS_PER_LOCATION {
-				user.Error("Too much users at this location, try adding #something at the end of the URL.")
+			    request.resultChan <- false
 			} else {
-				Log.Println("New user", user.UserId, "joins", location.Url)
-				location.AddUser(user)
-				go user.SocketHandler()
+				Log.Println("New user", request.user.UserId, "joins", location.Url)
+				location.AddUser(request.user)
+				request.resultChan <- true
 			}
 		case user := <-location.Quit:
 			location.RemoveUser(user)
