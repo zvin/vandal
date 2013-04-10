@@ -21,7 +21,7 @@ function User(user_id, position, color, mouse_is_down, it_is_me, nickname, use_p
             this.label.style.zIndex = reverse_zindex(4)
             this.label.style.background = "url(http://" + DOMAIN + "/static/crosshair.png) no-repeat"
             this.reposition_label()
-            document.body.appendChild(this.label)
+            frame_div.appendChild(this.label)
         }
     }
 
@@ -88,7 +88,7 @@ function User(user_id, position, color, mouse_is_down, it_is_me, nickname, use_p
 
     this.destroy = function(){
         if (this.label){
-            document.body.removeChild(this.label)
+            frame_div.removeChild(this.label)
         }
         delete users[this.user_id]
     }
