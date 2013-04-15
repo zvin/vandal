@@ -47,8 +47,7 @@ function destroy(){
             users[user_id].destroy()
         }
     }
-    document.body.removeChild(canvas)
-    document.body.removeChild(mask_canvas)
+    document.body.removeChild(frame_div)
     document.body.removeChild(chat_div)
     document.body.removeChild(toolbar)
     document.body.removeChild(loading_box)

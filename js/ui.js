@@ -422,9 +422,7 @@ function wrap_document_in_iframe(){
     var content = []
     for (var i=0; i<document.documentElement.childNodes.length; i++){
         var child = document.documentElement.childNodes[i]
-        if (child !== this_script){  // do not copy this script to the iframe
-            content.push(document.documentElement.removeChild(child))
-        }
+        content.push(document.documentElement.removeChild(child))
     }
     document.documentElement.innerHTML = ""
     frame_div = create_element("div", {
