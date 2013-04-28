@@ -1,10 +1,5 @@
-function apply_default_style(element){
-    element.style.color = "black"
-}
-
 function create_element(name, style){
     var element = document.createElement(name)
-    apply_default_style(element)
     for (var key in style) {
         if (style.hasOwnProperty(key)) {
             element.style.setProperty(key, style[key])
