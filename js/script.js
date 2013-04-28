@@ -5,7 +5,6 @@ var DOMAIN              = "DOMAIN_PLACEHOLDER",
     MOUSEMOVE_DELAY     = 16,  // minimum time (in ms) between two mousemove events; 16ms ~= 60Hz
     MAX_ZINDEX          = 2147483647,
     MAX_NICKNAME_LENGTH = 20,
-    this_script         = document.documentElement.lastChild,
     users               = new Object(),
     mask_lines          = new Array(),
     my_last_x           = null,
@@ -17,8 +16,8 @@ var DOMAIN              = "DOMAIN_PLACEHOLDER",
     incoming_blobs = [],
     is_decoding = false,
     chat_div, myPicker, nickname_span, canvas, messages_div, mySocket,
-    mask_canvas, ctx, mask_ctx, biggest_node, last_time, toolbar, loading_box,
-    progress_bar, warning_box, frame_div
+    mask_canvas, ctx, mask_ctx, biggest_node, last_time, loading_box,
+    progress_bar, warning_box, frame_div, frame
 
 
 function distance(x1, y1, x2, y2){
@@ -47,12 +46,7 @@ function destroy(){
             users[user_id].destroy()
         }
     }
-    document.body.removeChild(frame_div)
-    document.body.removeChild(chat_div)
-    document.body.removeChild(toolbar)
-    document.body.removeChild(loading_box)
-    document.body.removeChild(warning_box)
-    document.documentElement.removeChild(this_script)
+    unwrap_document_from_iframe()
     delete window.webinvader_pad
 }
 this.destroy = destroy

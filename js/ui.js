@@ -417,6 +417,26 @@ function display_chat_log(messages) {
     })
 }
 
+function put_embeds_down(){
+    // dirty hack to be able to draw over youtube flash videos
+    var embeds = frame.contentWindow.document.getElementsByTagName("embed")
+    for (var i=0; i<embeds.length; i++){
+        var embed = embeds[i]
+        if ((embed.getAttribute("type") == "application/x-shockwave-flash") && (embed.getAttribute("wmode") == null)) {
+            var parent = embed.parentNode
+            embed.setAttribute("wmode", "opaque")
+            parent.removeChild(embed)
+            setTimeout(function(){parent.appendChild(embed)}, 0)
+            setTimeout(function(){embed.stopVideo()}, 1000)
+        }
+    }
+}
+
+
+function unwrap_document_from_iframe(){
+    document.documentElement.innerHTML = frame.contentWindow.document.documentElement.innerHTML
+}
+
 function wrap_document_in_iframe(){
     var height = document.documentElement.scrollHeight
     var content = []
@@ -430,12 +450,13 @@ function wrap_document_in_iframe(){
         "width"   : WIDTH + "px",
         "margin"  : "auto",
     })
-    var frame = create_element("iframe", {
+    frame = create_element("iframe", {
         "width"   : "100%",
         "height"  : height + "px",
         "overflow": "hidden",
         "border"  : 0
     })
+    frame.onload = put_embeds_down
     frame_div.appendChild(frame)
     document.body.appendChild(frame_div)
     setTimeout(
