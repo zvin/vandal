@@ -126,11 +126,11 @@ func (location *Location) main() {
 				request.resultChan <- false
 			} else {
 				Log.Println("New user", request.user.UserId, "joins", location.Url)
-				location.AddUser(request.user)
+				location.addUser(request.user)
 				request.resultChan <- true
 			}
 		case user := <-location.Quit:
-			location.RemoveUser(user)
+			location.removeUser(user)
 			if len(location.users) == 0 {
 				location.save()
 				location.destroy()
@@ -169,7 +169,7 @@ func (location *Location) broadcast(user *User, event []interface{}) {
 	}
 }
 
-func (location *Location) AddUser(user *User) {
+func (location *Location) addUser(user *User) {
 	user.Location = location
 	// Send the list of present users to this user:
 	timestamp := Timestamp()
@@ -190,7 +190,7 @@ func (location *Location) AddUser(user *User) {
 	user.SendEvent([]interface{}{
 		EventTypeWelcome,
 		location.fileName,
-		location.GetDelta(),
+		location.getDelta(),
 		location.Chat.GetMessages(),
 	})
 	// Send this new user to other users:
@@ -223,8 +223,8 @@ func (location *Location) AddUser(user *User) {
 	location.UserCount += 1
 }
 
-func (location *Location) RemoveUser(user *User) {
-	location.users = Remove(location.users, user)
+func (location *Location) removeUser(user *User) {
+	location.users = remove(location.users, user)
 	timestamp := Timestamp()
 	location.broadcast(user, []interface{}{EventTypeLeave, timestamp})
 	location.Chat.AddMessage(timestamp, "", "user "+user.Nickname+" left")
@@ -254,7 +254,7 @@ func (location *Location) DrawLine(x1, y1, x2, y2, duration, red, green, blue in
 	location.surface.Stroke()
 }
 
-func (location *Location) GetDelta() []interface{} {
+func (location *Location) getDelta() []interface{} {
 	return location.delta
 }
 
@@ -267,7 +267,7 @@ func (location *Location) save() {
 	location.Chat.Save()
 }
 
-func Remove(list []*User, value *User) []*User {
+func remove(list []*User, value *User) []*User {
 	var i int
 	var elem *User
 	for i, elem = range list {
