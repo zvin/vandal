@@ -54,7 +54,7 @@ func GetLocation(url string) *Location {
 	if present {
 		return location
 	} else {
-		location = NewLocation(url)
+		location = newLocation(url)
 		locations[url] = location
 	}
 	return location
@@ -64,13 +64,13 @@ func CloseAllLocations() {
 	locationsMutex.Lock()
 	for _, loc := range locations {
 		loc.Close <- true
-		<-loc.Close
+		<-loc.Close  // Wait until the location is saved and closed
 		delete(locations, loc.Url)
 	}
 	locationsMutex.Unlock()
 }
 
-func CloseLocation(location *Location) {
+func closeLocation(location *Location) {
 	locationsMutex.Lock()
 	delete(locations, location.Url)
 	locationsMutex.Unlock()
@@ -92,7 +92,7 @@ func update_currently_used_sites() {
 	CurrentlyUsedSites.Mutex.Unlock()
 }
 
-func NewLocation(url string) *Location {
+func newLocation(url string) *Location {
 	loc := new(Location)
 	loc.Join = make(chan *JoinRequest)
 	loc.Quit = make(chan *User)
@@ -134,8 +134,8 @@ func (location *Location) main() {
 			if len(location.users) == 0 {
 				location.save()
 				location.destroy()
-				CloseLocation(location)
-				return
+				closeLocation(location)  // remove this location from locations map
+				return  // stop processing events for this location
 			}
 		case message := <-location.Message:
 			event := message.User.GotMessage(message.Event)
