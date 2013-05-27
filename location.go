@@ -132,8 +132,8 @@ func (location *Location) main() {
 		case user := <-location.Quit:
 			location.RemoveUser(user)
 			if len(location.users) == 0 {
-				location.Save()
-				location.Destroy()
+				location.save()
+				location.destroy()
 				CloseLocation(location)
 				return
 			}
@@ -143,20 +143,20 @@ func (location *Location) main() {
 				location.broadcast(message.User, event)
 			}
 		case <-save_tick:
-			location.Save()
+			location.save()
 		case <-location.Close:
 			for _, user := range location.users {
 				user.Socket.Close()
 			}
-			location.Save()
-			location.Destroy()
+			location.save()
+			location.destroy()
 			location.Close <- true
-			return
+			return  // stop processing events for this location
 		}
 	}
 }
 
-func (location *Location) Destroy() {
+func (location *Location) destroy() {
 	location.surface.Finish()
 	location.surface.Destroy()
 }
@@ -258,7 +258,7 @@ func (location *Location) GetDelta() []interface{} {
 	return location.delta
 }
 
-func (location *Location) Save() {
+func (location *Location) save() {
 	if len(location.delta) > 0 {
 		Log.Printf("save %s (delta %d)\n", location.Url, len(location.delta))
 		location.surface.WriteToPNG(location.fileName) // Output to PNG
