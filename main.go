@@ -56,12 +56,10 @@ func socket_handler(ws *websocket.Conn) {
 	}
 }
 
-func signal_handler(c chan os.Signal) {
+func signal_handler(c chan os.Signal, listener net.Listener) {
 	Log.Printf("signal %v\n", <-c)
+	listener.Close()  // stop accepting new connections
 	CloseAllLocations()
-	// Why do we become a daemon here ?
-	Log.Printf("exit\n")
-	os.Exit(0)
 }
 
 func init() {
@@ -102,10 +100,6 @@ func maxAgeHandler(seconds int, h http.Handler) http.Handler {
 }
 
 func main() {
-	SignalChan := make(chan os.Signal)
-	go signal_handler(SignalChan)
-	signal.Notify(SignalChan, os.Interrupt, os.Kill)
-
 	http.Handle("/ws", websocket.Handler(socket_handler))
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(STATIC_DIR))))
 	http.Handle("/img/", maxAgeHandler(0, http.StripPrefix("/img/", http.FileServer(http.Dir(IMAGES_DIR)))))
@@ -116,5 +110,11 @@ func main() {
 	if err != nil {
 		panic("Listen: " + err.Error())
 	}
+
+	SignalChan := make(chan os.Signal)
+	go signal_handler(SignalChan, listener)
+	signal.Notify(SignalChan, os.Interrupt, os.Kill)
+
 	http.Serve(listener, nil)
+	WaitLocations()
 }

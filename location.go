@@ -14,6 +14,7 @@ const (
 
 var (
 	locations          = make(map[string]*Location)
+	locationsWait      sync.WaitGroup
 	locationsMutex     sync.RWMutex
 	CurrentlyUsedSites LockableWebsiteSlice
 )
@@ -64,10 +65,13 @@ func CloseAllLocations() {
 	locationsMutex.Lock()
 	for _, loc := range locations {
 		loc.Close <- true
-		<-loc.Close  // Wait until the location is saved and closed
 		delete(locations, loc.Url)
 	}
 	locationsMutex.Unlock()
+}
+
+func WaitLocations() {
+	locationsWait.Wait()
 }
 
 func closeLocation(location *Location) {
@@ -119,6 +123,8 @@ func newLocation(url string) *Location {
 }
 
 func (location *Location) main() {
+    locationsWait.Add(1)
+    defer locationsWait.Done()
 	save_tick := time.Tick(1 * time.Minute)
 	for {
 		select {
@@ -149,10 +155,6 @@ func (location *Location) main() {
 			for _, user := range location.users {
 				user.Socket.Close()
 			}
-			location.save()
-			location.destroy()
-			location.Close <- true
-			return  // stop processing events for this location
 		case location.UserCount <- len(location.users):
 		}
 	}
