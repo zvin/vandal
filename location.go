@@ -28,8 +28,8 @@ type Location struct {
 	Quit         chan *User
 	Message      chan UserAndEvent
 	Close        chan bool
+	UserCount    chan int
 	Url          string
-	UserCount    int
 	Chat         *MessagesLog
 	users        []*User
 	fileName     string
@@ -80,7 +80,7 @@ func update_currently_used_sites() {
 	var sites []Website
 	locationsMutex.RLock()
 	for _, location := range locations {
-		count := location.UserCount
+		count := <- location.UserCount
 		if count > 0 {
 			sites = append(sites, Website{Url: location.Url, UserCount: count})
 		}
@@ -98,6 +98,7 @@ func newLocation(url string) *Location {
 	loc.Quit = make(chan *User)
 	loc.Message = make(chan UserAndEvent)
 	loc.Close = make(chan bool)
+	loc.UserCount = make(chan int)
 	loc.Url = url
 	b64fname := Base64Encode(url)
 	b64fname = b64fname[:MinInt(len(b64fname), 251)]
@@ -152,6 +153,7 @@ func (location *Location) main() {
 			location.destroy()
 			location.Close <- true
 			return  // stop processing events for this location
+		case location.UserCount <- len(location.users):
 		}
 	}
 }
@@ -220,7 +222,6 @@ func (location *Location) addUser(user *User) {
 	user.SendEvent(event)
 	location.users = append(location.users, user)
 	location.Chat.AddMessage(timestamp, "", "user "+user.Nickname+" joined")
-	location.UserCount += 1
 }
 
 func (location *Location) removeUser(user *User) {
@@ -228,7 +229,6 @@ func (location *Location) removeUser(user *User) {
 	timestamp := Timestamp()
 	location.broadcast(user, []interface{}{EventTypeLeave, timestamp})
 	location.Chat.AddMessage(timestamp, "", "user "+user.Nickname+" left")
-	location.UserCount -= 1
 }
 
 func (location *Location) DrawLine(x1, y1, x2, y2, duration, red, green, blue int, use_pen bool) {
