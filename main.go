@@ -3,6 +3,7 @@ package main
 import (
 	"code.google.com/p/go.net/websocket"
 	"flag"
+	"net"
 	"fmt"
 	"html/template"
 	"io"
@@ -110,8 +111,10 @@ func main() {
 	http.Handle("/img/", maxAgeHandler(0, http.StripPrefix("/img/", http.FileServer(http.Dir(IMAGES_DIR)))))
 	http.Handle("/", http.HandlerFunc(index_handler))
 	Log.Printf("Listening on port %d\n", *port)
-	err := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
+
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
 	if err != nil {
-		panic("ListenAndServe: " + err.Error())
+		panic("Listen: " + err.Error())
 	}
+	http.Serve(listener, nil)
 }
