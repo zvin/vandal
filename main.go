@@ -3,11 +3,11 @@ package main
 import (
 	"code.google.com/p/go.net/websocket"
 	"flag"
-	"net"
 	"fmt"
 	"html/template"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -58,7 +58,7 @@ func socket_handler(ws *websocket.Conn) {
 
 func signal_handler(c chan os.Signal, listener net.Listener) {
 	Log.Printf("signal %v\n", <-c)
-	listener.Close()  // stop accepting new connections
+	listener.Close() // stop accepting new connections
 	CloseAllLocations()
 }
 

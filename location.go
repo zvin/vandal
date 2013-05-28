@@ -84,7 +84,7 @@ func update_currently_used_sites() {
 	var sites []Website
 	locationsMutex.RLock()
 	for _, location := range locations {
-		count := <- location.UserCount
+		count := <-location.UserCount
 		if count > 0 {
 			sites = append(sites, Website{Url: location.Url, UserCount: count})
 		}
@@ -123,8 +123,8 @@ func newLocation(url string) *Location {
 }
 
 func (location *Location) main() {
-    locationsWait.Add(1)
-    defer locationsWait.Done()
+	locationsWait.Add(1)
+	defer locationsWait.Done()
 	save_tick := time.Tick(1 * time.Minute)
 	for {
 		select {
@@ -141,8 +141,8 @@ func (location *Location) main() {
 			if len(location.users) == 0 {
 				location.save()
 				location.destroy()
-				closeLocation(location)  // remove this location from locations map
-				return  // stop processing events for this location
+				closeLocation(location) // remove this location from locations map
+				return                  // stop processing events for this location
 			}
 		case message := <-location.Message:
 			event := message.User.GotMessage(message.Event)
