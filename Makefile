@@ -14,11 +14,18 @@ JSFILES=js/jscolor.js js/header.js js/msgpack.codec.js js/user.js js/ui.js js/cl
 HTMLOUT=$(BUILD)/templates/index.html
 HTMLFILES=templates/index.html
 
+ifeq ($(DEBUG),true)
+	GOFLAGS=-race
+else
+	GOFLAGS=
+endif
+
+
 all: $(GOOUT) $(JSOUT) $(HTMLOUT) staticfiles
 
-$(GOOUT): $(GOFILES)
+$(GOOUT): $(GOFILES) DEBUG
 	$(dir_guard)
-	go build -o $(GOOUT) $(GOFILES)
+	go build $(GOFLAGS) -o $(GOOUT) $(GOFILES)
 
 $(HTMLOUT): $(HTMLFILES) DOMAIN
 	$(dir_guard)
