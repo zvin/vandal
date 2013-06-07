@@ -38,9 +38,9 @@ func NewUser(ws *websocket.Conn) *User {
 	user.UserId = <-userIdGenerator
 	user.Nickname = strconv.Itoa(user.UserId)
 	user.UsePen = true
-    user.SendEvent, user.sendErr = sender(user.Socket)
-    user.recv, user.recvErr = receiver(user.Socket)
-    user.Kick = make(chan bool)
+	user.SendEvent, user.sendErr = sender(user.Socket)
+	user.recv, user.recvErr = receiver(user.Socket)
+	user.Kick = make(chan bool)
 	return user
 }
 
@@ -72,19 +72,16 @@ func (user *User) Error(description string) {
 }
 
 func (user *User) ErrorSync(description string) {
-	event := []interface{}{
-		EventTypeError,
-		description,
-	}
+	event := []interface{}{EventTypeError, description}
 	data, err := encodeEvent(event)
-    if err != nil {
-        Log.Printf("Couldn't encode error event '%v': %v\n", event, err)
-        return
-    }
-    err = websocket.Message.Send(user.Socket, data)
-    if err != nil {
-        Log.Printf("Couldn't send error event '%v': %v\n", event, err)
-    }
+	if err != nil {
+		Log.Printf("Couldn't encode error event '%v': %v\n", event, err)
+		return
+	}
+	err = websocket.Message.Send(user.Socket, data)
+	if err != nil {
+		Log.Printf("Couldn't send error event '%v': %v\n", event, err)
+	}
 }
 
 func (user *User) mouseMove(x int, y int, duration int) {
@@ -180,72 +177,73 @@ func (user *User) GotMessage(event []interface{}) []interface{} {
 }
 
 func sender(ws *websocket.Conn) (chan<- []interface{}, chan error) {
-    ch, errCh := make(chan []interface{}), make(chan error)
-    go func() {
-        for {
-            event := <- ch
-            data, err := encodeEvent(event)
-            if err != nil {
-                errCh <- err
-                break
-            }
-            err = websocket.Message.Send(ws, data)
-		    if err != nil {
-		        errCh <- err
-		        break
-		    }
+	ch, errCh := make(chan []interface{}), make(chan error)
+	go func() {
+		for {
+			event := <-ch
+			data, err := encodeEvent(event)
+			if err != nil {
+				errCh <- err
+				break
+			}
+			err = websocket.Message.Send(ws, data)
+			if err != nil {
+				errCh <- err
+				break
+			}
 		}
-//        close(errCh)
-    }()
-    return ch, errCh
+		//        close(errCh)
+	}()
+	return ch, errCh
 }
 
 func receiver(ws *websocket.Conn) (<-chan []interface{}, chan error) {
-    // receives and decodes messages from users
-    ch, errCh := make(chan []interface{}), make(chan error)
-    go func() {
-        for {
-            var data []byte
-		    var event []interface{}
-            err := websocket.Message.Receive(ws, &data)
-		    if err != nil {
-		        errCh <- err
-		        break
-		    }
-		    err = msgpack.Unmarshal(data, &event, nil)
-		    if err != nil {
-			    errCh <- err
-		        break
-		    }
-		    ch <- event
+	// receives and decodes messages from users
+	ch, errCh := make(chan []interface{}), make(chan error)
+	go func() {
+		for {
+			var data []byte
+			var event []interface{}
+			err := websocket.Message.Receive(ws, &data)
+			if err != nil {
+				errCh <- err
+				break
+			}
+			err = msgpack.Unmarshal(data, &event, nil)
+			if err != nil {
+				errCh <- err
+				break
+			}
+			ch <- event
 		}
-//		Log.Printf("break nnnn\n")
-//	    close(errCh)
-//        close(ch)
-    }()
-    return ch, errCh
+		//		Log.Printf("break nnnn\n")
+		//	    close(errCh)
+		//        close(ch)
+	}()
+	return ch, errCh
 }
 
 func (user *User) SocketHandler() {
-    for {
-        select {
-        case event := <- user.recv:
-            user.Location.Message <- UserAndEvent{user, event}
-        case err := <- user.sendErr:
-            Log.Printf("send error for user %v: %v\n", user.UserId, err)
-            user.Location.Quit <- user
-            return
-        case err := <- user.recvErr:
-            Log.Printf("recv error for user %v: %v\n", user.UserId, err)
-            user.Location.Quit <- user
-            return
-        case <- user.Kick:
-            Log.Printf("user %v was kicked\n", user.UserId)
-            user.Location.Quit <- user
-            return
-        }
-    }
+	for {
+		select {
+		case event := <-user.recv:
+			user.Location.Message <- UserAndEvent{user, event}
+		case err := <-user.sendErr:
+			Log.Printf("send error for user %v: %v\n", user.UserId, err)
+			user.Location.Quit <- user
+			return
+		case err := <-user.recvErr:
+			Log.Printf("recv error for user %v: %v\n", user.UserId, err)
+			user.Location.Quit <- user
+			return
+		case <-user.Kick:
+			Log.Printf("user %v was kicked\n", user.UserId)
+			user.Location.Quit <- user
+			return
+		}
+	}
 }
+
 //	var buffer []byte
 //	for {
 //		err := websocket.Message.Receive(user.Socket, &buffer)
