@@ -71,6 +71,22 @@ func (user *User) Error(description string) {
 	user.Kick <- true
 }
 
+func (user *User) ErrorSync(description string) {
+	event := []interface{}{
+		EventTypeError,
+		description,
+	}
+	data, err := encodeEvent(event)
+    if err != nil {
+        Log.Printf("Couldn't encode error event '%v': %v\n", event, err)
+        return
+    }
+    err = websocket.Message.Send(user.Socket, data)
+    if err != nil {
+        Log.Printf("Couldn't send error event '%v': %v\n", event, err)
+    }
+}
+
 func (user *User) mouseMove(x int, y int, duration int) {
 	//    fmt.Printf("mouse move\n")
 	if user.MouseIsDown {

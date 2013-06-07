@@ -41,7 +41,7 @@ func socket_handler(ws *websocket.Conn) {
 	// Retrieve the site the user wants to draw over:
 	location_url, err := url.QueryUnescape(ws.Request().RequestURI[6:]) // skip "/ws?u="
 	if err != nil {
-		user.Error("Invalid query")
+		user.ErrorSync("Invalid query")
 		return
 	}
 
@@ -52,7 +52,7 @@ func socket_handler(ws *websocket.Conn) {
 	if user_joined {
 		user.SocketHandler()
 	} else {
-		user.Error("Too much users at this location, try adding #something at the end of the URL.")
+		user.ErrorSync("Too much users at this location, try adding #something at the end of the URL.")
 	}
 }
 
