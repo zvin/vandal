@@ -64,6 +64,7 @@ func encodeEvent(event []interface{}) ([]byte, error) {
 }
 
 func (user *User) Error(description string) {
+	Log.Printf("Error for user %v: %v\n", user.UserId, description)
 	user.SendEvent <- []interface{}{
 		EventTypeError,
 		description,
@@ -72,6 +73,7 @@ func (user *User) Error(description string) {
 }
 
 func (user *User) ErrorSync(description string) {
+	Log.Printf("Error for user %v: %v\n", user.UserId, description)
 	event := []interface{}{EventTypeError, description}
 	data, err := encodeEvent(event)
 	if err != nil {
