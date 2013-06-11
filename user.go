@@ -194,7 +194,6 @@ func sender(ws *websocket.Conn) (chan<- []interface{}, chan error) {
 				break
 			}
 		}
-		//        close(errCh)
 	}()
 	return ch, errCh
 }
@@ -218,9 +217,6 @@ func receiver(ws *websocket.Conn) (<-chan []interface{}, chan error) {
 			}
 			ch <- event
 		}
-		//		Log.Printf("break nnnn\n")
-		//	    close(errCh)
-		//        close(ch)
 	}()
 	return ch, errCh
 }
@@ -245,52 +241,3 @@ func (user *User) SocketHandler() {
 		}
 	}
 }
-
-//	var buffer []byte
-//	for {
-//		err := websocket.Message.Receive(user.Socket, &buffer)
-//		if err != nil {
-//			if err.Error() == "EOF" {
-//				Log.Printf("User %v closed connection.\n", user.UserId)
-//			} else {
-//				Log.Printf("error while reading socket for user %v: %v\n", user.UserId, err)
-//			}
-//			break
-//		}
-//		var event []interface{}
-//		err = msgpack.Unmarshal(buffer, &event, nil)
-//		if err != nil {
-//			Log.Printf("this is not msgpack: '%v' %v\n", buffer, err)
-//			user.Error("Invalid message")
-//		} else {
-//			user.Location.Message <- UserAndEvent{user, event}
-//		}
-//	}
-//	user.Location.Quit <- user
-//	user.Socket.Close()
-//}
-
-//func (user *User) SocketHandlerOld() {
-//	var buffer []byte
-//	for {
-//		err := websocket.Message.Receive(user.Socket, &buffer)
-//		if err != nil {
-//			if err.Error() == "EOF" {
-//				Log.Printf("User %v closed connection.\n", user.UserId)
-//			} else {
-//				Log.Printf("error while reading socket for user %v: %v\n", user.UserId, err)
-//			}
-//			break
-//		}
-//		var event []interface{}
-//		err = msgpack.Unmarshal(buffer, &event, nil)
-//		if err != nil {
-//			Log.Printf("this is not msgpack: '%v' %v\n", buffer, err)
-//			user.Error("Invalid message")
-//		} else {
-//			user.Location.Message <- UserAndEvent{user, event}
-//		}
-//	}
-//	user.Location.Quit <- user
-//	user.Socket.Close()
-//}
