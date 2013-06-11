@@ -1,5 +1,6 @@
 DOMAIN=$(shell cat DOMAIN)
 DEBUG=$(shell cat DEBUG)
+COMMIT=$(shell git log -n1 --pretty=format:%H)
 
 dir_guard=@mkdir -p $(@D)  # create the folder of the target if it doesn't exist
 CLOSURECOMPILER=compiler.jar
@@ -21,7 +22,7 @@ else
 endif
 
 
-all: $(GOOUT) $(JSOUT) $(HTMLOUT) staticfiles
+all: $(GOOUT) $(JSOUT) $(HTMLOUT) staticfiles version
 
 $(GOOUT): $(GOFILES) DEBUG
 	$(dir_guard)
@@ -44,10 +45,13 @@ else
 endif
 	sed -i 's/DOMAIN_PLACEHOLDER/'$(DOMAIN)'/g' $(JSOUT)
 
-.PHONY: staticfiles
+.PHONY: version staticfiles
 
 staticfiles:
 	rsync -r static $(BUILD)/
+
+version:
+	sed -i 's/COMMIT_PLACEHOLDER/'$(COMMIT)'/g' $(HTMLOUT)
 
 mrproper:
 	rm -rf $(BUILD)
