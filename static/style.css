@@ -103,3 +103,7 @@ p{
 	float: right;
 	margin: 0 0 0 20px;
 }
+
+.commit{
+	display: none;
+}
