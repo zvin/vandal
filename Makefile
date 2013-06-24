@@ -1,5 +1,6 @@
 DOMAIN=$(shell cat DOMAIN)
 DEBUG=$(shell cat DEBUG)
+COMMIT=$(shell git log -n1 --pretty=format:%H)
 
 dir_guard=@mkdir -p $(@D)  # create the folder of the target if it doesn't exist
 CLOSURECOMPILER=compiler.jar
@@ -14,11 +15,18 @@ JSFILES=js/jscolor.js js/header.js js/msgpack.codec.js js/user.js js/ui.js js/cl
 HTMLOUT=$(BUILD)/templates/index.html
 HTMLFILES=templates/index.html
 
-all: $(GOOUT) $(JSOUT) $(HTMLOUT) staticfiles
+ifeq ($(DEBUG),true)
+	GOFLAGS=-race
+else
+	GOFLAGS=
+endif
 
-$(GOOUT): $(GOFILES)
+
+all: $(GOOUT) $(JSOUT) $(HTMLOUT) staticfiles version
+
+$(GOOUT): $(GOFILES) DEBUG
 	$(dir_guard)
-	go build -o $(GOOUT) $(GOFILES)
+	go build $(GOFLAGS) -o $(GOOUT) $(GOFILES)
 
 $(HTMLOUT): $(HTMLFILES) DOMAIN
 	$(dir_guard)
@@ -37,10 +45,13 @@ else
 endif
 	sed -i 's/DOMAIN_PLACEHOLDER/'$(DOMAIN)'/g' $(JSOUT)
 
-.PHONY: staticfiles
+.PHONY: version staticfiles
 
 staticfiles:
 	rsync -r static $(BUILD)/
+
+version:
+	sed -i 's/COMMIT_PLACEHOLDER/'$(COMMIT)'/g' $(HTMLOUT)
 
 mrproper:
 	rm -rf $(BUILD)

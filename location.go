@@ -14,6 +14,7 @@ const (
 
 var (
 	locations          = make(map[string]*Location)
+	locationsWait      sync.WaitGroup
 	locationsMutex     sync.RWMutex
 	CurrentlyUsedSites LockableWebsiteSlice
 )
@@ -28,8 +29,8 @@ type Location struct {
 	Quit         chan *User
 	Message      chan UserAndEvent
 	Close        chan bool
+	UserCount    chan int
 	Url          string
-	UserCount    int
 	Chat         *MessagesLog
 	users        []*User
 	fileName     string
@@ -54,7 +55,7 @@ func GetLocation(url string) *Location {
 	if present {
 		return location
 	} else {
-		location = NewLocation(url)
+		location = newLocation(url)
 		locations[url] = location
 	}
 	return location
@@ -64,13 +65,16 @@ func CloseAllLocations() {
 	locationsMutex.Lock()
 	for _, loc := range locations {
 		loc.Close <- true
-		<-loc.Close
 		delete(locations, loc.Url)
 	}
 	locationsMutex.Unlock()
 }
 
-func CloseLocation(location *Location) {
+func WaitLocations() {
+	locationsWait.Wait()
+}
+
+func closeLocation(location *Location) {
 	locationsMutex.Lock()
 	delete(locations, location.Url)
 	locationsMutex.Unlock()
@@ -80,7 +84,7 @@ func update_currently_used_sites() {
 	var sites []Website
 	locationsMutex.RLock()
 	for _, location := range locations {
-		count := location.UserCount
+		count := <-location.UserCount
 		if count > 0 {
 			sites = append(sites, Website{Url: location.Url, UserCount: count})
 		}
@@ -92,12 +96,13 @@ func update_currently_used_sites() {
 	CurrentlyUsedSites.Mutex.Unlock()
 }
 
-func NewLocation(url string) *Location {
+func newLocation(url string) *Location {
 	loc := new(Location)
 	loc.Join = make(chan *JoinRequest)
 	loc.Quit = make(chan *User)
 	loc.Message = make(chan UserAndEvent)
 	loc.Close = make(chan bool)
+	loc.UserCount = make(chan int)
 	loc.Url = url
 	b64fname := Base64Encode(url)
 	b64fname = b64fname[:MinInt(len(b64fname), 251)]
@@ -118,6 +123,8 @@ func NewLocation(url string) *Location {
 }
 
 func (location *Location) main() {
+	locationsWait.Add(1)
+	defer locationsWait.Done()
 	save_tick := time.Tick(1 * time.Minute)
 	for {
 		select {
@@ -126,16 +133,16 @@ func (location *Location) main() {
 				request.resultChan <- false
 			} else {
 				Log.Println("New user", request.user.UserId, "joins", location.Url)
-				location.AddUser(request.user)
+				location.addUser(request.user)
 				request.resultChan <- true
 			}
 		case user := <-location.Quit:
-			location.RemoveUser(user)
+			location.removeUser(user)
 			if len(location.users) == 0 {
-				location.Save()
-				location.Destroy()
-				CloseLocation(location)
-				return
+				location.save()
+				location.destroy()
+				closeLocation(location) // remove this location from locations map
+				return                  // stop processing events for this location
 			}
 		case message := <-location.Message:
 			event := message.User.GotMessage(message.Event)
@@ -143,20 +150,17 @@ func (location *Location) main() {
 				location.broadcast(message.User, event)
 			}
 		case <-save_tick:
-			location.Save()
+			location.save()
 		case <-location.Close:
 			for _, user := range location.users {
 				user.Socket.Close()
 			}
-			location.Save()
-			location.Destroy()
-			location.Close <- true
-			return
+		case location.UserCount <- len(location.users):
 		}
 	}
 }
 
-func (location *Location) Destroy() {
+func (location *Location) destroy() {
 	location.surface.Finish()
 	location.surface.Destroy()
 }
@@ -169,7 +173,7 @@ func (location *Location) broadcast(user *User, event []interface{}) {
 	}
 }
 
-func (location *Location) AddUser(user *User) {
+func (location *Location) addUser(user *User) {
 	user.Location = location
 	// Send the list of present users to this user:
 	timestamp := Timestamp()
@@ -190,7 +194,7 @@ func (location *Location) AddUser(user *User) {
 	user.SendEvent([]interface{}{
 		EventTypeWelcome,
 		location.fileName,
-		location.GetDelta(),
+		location.getDelta(),
 		location.Chat.GetMessages(),
 	})
 	// Send this new user to other users:
@@ -220,15 +224,13 @@ func (location *Location) AddUser(user *User) {
 	user.SendEvent(event)
 	location.users = append(location.users, user)
 	location.Chat.AddMessage(timestamp, "", "user "+user.Nickname+" joined")
-	location.UserCount += 1
 }
 
-func (location *Location) RemoveUser(user *User) {
-	location.users = Remove(location.users, user)
+func (location *Location) removeUser(user *User) {
+	location.users = remove(location.users, user)
 	timestamp := Timestamp()
 	location.broadcast(user, []interface{}{EventTypeLeave, timestamp})
 	location.Chat.AddMessage(timestamp, "", "user "+user.Nickname+" left")
-	location.UserCount -= 1
 }
 
 func (location *Location) DrawLine(x1, y1, x2, y2, duration, red, green, blue int, use_pen bool) {
@@ -254,11 +256,11 @@ func (location *Location) DrawLine(x1, y1, x2, y2, duration, red, green, blue in
 	location.surface.Stroke()
 }
 
-func (location *Location) GetDelta() []interface{} {
+func (location *Location) getDelta() []interface{} {
 	return location.delta
 }
 
-func (location *Location) Save() {
+func (location *Location) save() {
 	if len(location.delta) > 0 {
 		Log.Printf("save %s (delta %d)\n", location.Url, len(location.delta))
 		location.surface.WriteToPNG(location.fileName) // Output to PNG
@@ -267,7 +269,7 @@ func (location *Location) Save() {
 	location.Chat.Save()
 }
 
-func Remove(list []*User, value *User) []*User {
+func remove(list []*User, value *User) []*User {
 	var i int
 	var elem *User
 	for i, elem = range list {
