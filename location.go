@@ -170,7 +170,7 @@ func (location *Location) broadcast(user *User, event []interface{}) {
 	// event.insert(1, user.UserId) ...
 	event = append(event[:1], append([]interface{}{user.UserId}, event[1:]...)...)
 	for _, other := range location.users {
-		other.SendEvent <- event
+		other.SendEvent(event)
 	}
 }
 
@@ -178,7 +178,7 @@ func (location *Location) addUser(user *User) {
 	// Send the list of present users to this user:
 	timestamp := Timestamp()
 	for _, other := range location.users {
-		user.SendEvent <- []interface{}{
+		user.SendEvent([]interface{}{
 			EventTypeJoin,
 			other.UserId,
 			[]interface{}{other.PositionX, other.PositionY},
@@ -188,15 +188,15 @@ func (location *Location) addUser(user *User) {
 			other.Nickname,
 			other.UsePen,
 			0, // no timestamp
-		}
+		})
 	}
 	// Send the delta between the image and now to the new user:
-	user.SendEvent <- []interface{}{
+	user.SendEvent([]interface{}{
 		EventTypeWelcome,
 		location.fileName,
 		location.getDelta(),
 		location.Chat.GetMessages(),
-	}
+	})
 	// Send this new user to other users:
 	event := []interface{}{
 		EventTypeJoin,
@@ -221,7 +221,7 @@ func (location *Location) addUser(user *User) {
 		user.UsePen,
 		timestamp,
 	}
-	user.SendEvent <- event
+	user.SendEvent(event)
 	location.users = append(location.users, user)
 	location.Chat.AddMessage(timestamp, "", "user "+user.Nickname+" joined")
 }

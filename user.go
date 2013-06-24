@@ -15,7 +15,7 @@ var userIdGenerator chan int
 
 type User struct {
 	Socket      *websocket.Conn
-	SendEvent   chan<- []interface{}
+	sendEvent   chan<- []interface{}
 	recv        <-chan []interface{}
 	sendErr     chan error
 	recvErr     chan error
@@ -38,7 +38,7 @@ func NewUser(ws *websocket.Conn) *User {
 	user.UserId = <-userIdGenerator
 	user.Nickname = strconv.Itoa(user.UserId)
 	user.UsePen = true
-	user.SendEvent, user.sendErr = sender(user.Socket)
+	user.sendEvent, user.sendErr = sender(user.Socket)
 	user.recv, user.recvErr = receiver(user.Socket)
 	user.Kick = make(chan bool)
 	return user
@@ -65,11 +65,20 @@ func encodeEvent(event []interface{}) ([]byte, error) {
 
 func (user *User) Error(description string) {
 	Log.Printf("Error for user %v: %v\n", user.UserId, description)
-	user.SendEvent <- []interface{}{
+	user.sendEvent <- []interface{}{
 		EventTypeError,
 		description,
 	}
 	user.Kick <- true
+}
+
+func (user *User) SendEvent(event []interface{}) {
+	select {
+	case user.sendEvent <- event:
+	default:
+	    Log.Printf("Buffer full for user %v: kicking.\n", user.UserId)
+	    user.Kick <- true
+	}
 }
 
 func (user *User) ErrorSync(description string) {
@@ -179,10 +188,13 @@ func (user *User) GotMessage(event []interface{}) []interface{} {
 }
 
 func sender(ws *websocket.Conn) (chan<- []interface{}, chan error) {
-	ch, errCh := make(chan []interface{}), make(chan error)
+	ch, errCh := make(chan []interface{}, 256), make(chan error)
 	go func() {
 		for {
-			event := <-ch
+			event, ok := <-ch
+			if !ok {
+			    break
+			}
 			data, err := encodeEvent(event)
 			if err != nil {
 				errCh <- err
