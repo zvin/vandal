@@ -12,8 +12,8 @@ const (
 )
 
 var (
-    userIdGenerator chan int
-    msgpackHandle codec.MsgpackHandle
+	userIdGenerator chan int
+	msgpackHandle   codec.MsgpackHandle
 )
 
 type User struct {
