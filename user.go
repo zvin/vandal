@@ -4,6 +4,7 @@ import (
 	"code.google.com/p/go.net/websocket"
 	"github.com/ugorji/go-msgpack"
 	"strconv"
+	"time"
 )
 
 const (
@@ -200,6 +201,11 @@ func sender(ws *websocket.Conn) (chan<- []interface{}, chan error) {
 				errCh <- err
 				break
 			}
+			err = ws.SetWriteDeadline(time.Now().Add(1 * time.Second))
+			if err != nil {
+				errCh <- err
+				break
+			}
 			err = websocket.Message.Send(ws, data)
 			if err != nil {
 				errCh <- err
@@ -217,7 +223,12 @@ func receiver(ws *websocket.Conn) (<-chan []interface{}, chan error) {
 		for {
 			var data []byte
 			var event []interface{}
-			err := websocket.Message.Receive(ws, &data)
+			err := ws.SetReadDeadline(time.Now().Add(1 * time.Second))
+			if err != nil {
+				errCh <- err
+				break
+			}
+			err = websocket.Message.Receive(ws, &data)
 			if err != nil {
 				errCh <- err
 				break
