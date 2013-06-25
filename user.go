@@ -13,8 +13,8 @@ const (
 )
 
 var (
-    userIdGenerator chan int
-    msgpackHandle codec.MsgpackHandle
+	userIdGenerator chan int
+	msgpackHandle   codec.MsgpackHandle
 )
 
 type User struct {
@@ -77,8 +77,8 @@ func (user *User) SendEvent(event []interface{}) {
 	select {
 	case user.sendEvent <- event:
 	default:
-	    Log.Printf("Buffer full for user %v: kicking.\n", user.UserId)
-	    user.Kick <- true
+		Log.Printf("Buffer full for user %v: kicking.\n", user.UserId)
+		user.Kick <- true
 	}
 }
 
@@ -194,7 +194,7 @@ func sender(ws *websocket.Conn) (chan<- []interface{}, chan error) {
 		for {
 			event, ok := <-ch
 			if !ok {
-			    break
+				break
 			}
 			data, err := encodeEvent(event)
 			if err != nil {
