@@ -10,8 +10,8 @@ Install dependencies
 
     ```shell
     apt-get install libcairo2-dev
-    go get code.google.com/p/go.net/websocket github.com/ugorji/go-msgpack github.com/zvin/gocairo
-    go install code.google.com/p/go.net/websocket github.com/ugorji/go-msgpack github.com/zvin/gocairo
+    go get code.google.com/p/go.net/websocket github.com/ugorji/go/codec github.com/zvin/gocairo
+    go install code.google.com/p/go.net/websocket github.com/ugorji/go/codec github.com/zvin/gocairo
     ```
 
  * optionnal (for javascript minification):

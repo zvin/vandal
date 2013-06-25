@@ -2,7 +2,7 @@ package main
 
 import (
 	"code.google.com/p/go.net/websocket"
-	"github.com/ugorji/go-msgpack"
+	"github.com/ugorji/go/codec"
 	"strconv"
 	"time"
 )
@@ -12,7 +12,10 @@ const (
 	MAX_NICKNAME_LENGTH    = 20
 )
 
-var userIdGenerator chan int
+var (
+    userIdGenerator chan int
+    msgpackHandle codec.MsgpackHandle
+)
 
 type User struct {
 	Socket      *websocket.Conn
@@ -56,8 +59,8 @@ func init() {
 	}()
 }
 
-func encodeEvent(event []interface{}) ([]byte, error) {
-	result, err := msgpack.Marshal(event)
+func encodeEvent(event []interface{}) (result []byte, err error) {
+	err = codec.NewEncoderBytes(&result, &msgpackHandle).Encode(event)
 	if err != nil {
 		Log.Printf("Couldn't encode event '%v'\n", event)
 	}
@@ -172,9 +175,9 @@ func (user *User) GotMessage(event []interface{}) []interface{} {
 		user.changeColor(p0, p1, p2)
 	case EventTypeChangeNickname:
 		timestamp := Timestamp()
-		nickname := params[0].(string)
+		nickname := string(params[0].([]uint8))
 		if len(nickname) <= MAX_NICKNAME_LENGTH {
-			user.changeNickname(params[0].(string), timestamp)
+			user.changeNickname(nickname, timestamp)
 			event = append(event, timestamp)
 		} else {
 			user.Error("Nickname too long")
@@ -182,7 +185,7 @@ func (user *User) GotMessage(event []interface{}) []interface{} {
 		}
 	case EventTypeChatMessage:
 		timestamp := Timestamp()
-		user.chatMessage(params[0].(string), timestamp)
+		user.chatMessage(string(params[0].([]uint8)), timestamp)
 		event = append(event, timestamp)
 	}
 	return event
@@ -233,7 +236,7 @@ func receiver(ws *websocket.Conn) (<-chan []interface{}, chan error) {
 				errCh <- err
 				break
 			}
-			err = msgpack.Unmarshal(data, &event, nil)
+			err = codec.NewDecoderBytes(data, &msgpackHandle).Decode(&event)
 			if err != nil {
 				errCh <- err
 				break
