@@ -61,9 +61,6 @@ func init() {
 
 func encodeEvent(event []interface{}) (result []byte, err error) {
 	err = codec.NewEncoderBytes(&result, &msgpackHandle).Encode(event)
-	if err != nil {
-		Log.Printf("Couldn't encode event '%v'\n", event)
-	}
 	return result, err
 }
 
