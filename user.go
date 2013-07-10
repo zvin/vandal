@@ -1,17 +1,28 @@
 package main
 
 import (
-	"code.google.com/p/go.net/websocket"
+//	"code.google.com/p/go.net/websocket"
+	"github.com/garyburd/go-websocket/websocket"
 	"github.com/ugorji/go/codec"
 	"strconv"
 	"time"
+	"io/ioutil"
+	"fmt"
 )
 
 const (
 	MAX_USERS_PER_LOCATION = 2
 	MAX_NICKNAME_LENGTH    = 20
+    
+    // Time allowed to write a message to the client.
+    writeWait = 10 * time.Second
+    // Time allowed to read the next message from the client.
+    readWait = 60 * time.Second
+    // Send pings to client with this period. Must be less than readWait.
+    pingPeriod = (readWait * 9) / 10
+    // Maximum message size allowed from client.
+    maxMessageSize = 512
 )
-
 var (
 	userIdGenerator chan int
 	msgpackHandle   codec.MsgpackHandle
@@ -90,7 +101,8 @@ func (user *User) ErrorSync(description string) {
 		Log.Printf("Couldn't encode error event '%v': %v\n", event, err)
 		return
 	}
-	err = websocket.Message.Send(user.Socket, data)
+//	err = websocket.Message.Send(user.Socket, data)
+	err = write(user.Socket, websocket.OpBinary, data)
 	if err != nil {
 		Log.Printf("Couldn't send error event '%v': %v\n", event, err)
 	}
@@ -188,57 +200,134 @@ func (user *User) GotMessage(event []interface{}) []interface{} {
 	return event
 }
 
+//func sender(ws *websocket.Conn) (chan<- []interface{}, chan error) {
+//	ch, errCh := make(chan []interface{}, 256), make(chan error)
+//	go func() {
+//		for {
+//			event, ok := <-ch
+//			if !ok {
+//				break
+//			}
+//			data, err := encodeEvent(event)
+//			if err != nil {
+//				errCh <- err
+//				break
+//			}
+//			err = ws.SetWriteDeadline(time.Now().Add(1 * time.Second))
+//			if err != nil {
+//				errCh <- err
+//				break
+//			}
+//			err = websocket.Message.Send(ws, data)
+//			if err != nil {
+//				errCh <- err
+//				break
+//			}
+//		}
+//	}()
+//	return ch, errCh
+//}
+
+func write(ws *websocket.Conn, opCode int, payload []byte) error {
+	ws.SetWriteDeadline(time.Now().Add(writeWait))
+	return ws.WriteMessage(opCode, payload)
+}
+
+//func (c *connection) writePump() {
 func sender(ws *websocket.Conn) (chan<- []interface{}, chan error) {
 	ch, errCh := make(chan []interface{}, 256), make(chan error)
 	go func() {
+		ticker := time.NewTicker(pingPeriod)
+		defer func() {
+			ticker.Stop()
+		}()
 		for {
-			event, ok := <-ch
-			if !ok {
-				break
-			}
-			data, err := encodeEvent(event)
-			if err != nil {
-				errCh <- err
-				break
-			}
-			err = ws.SetWriteDeadline(time.Now().Add(1 * time.Second))
-			if err != nil {
-				errCh <- err
-				break
-			}
-			err = websocket.Message.Send(ws, data)
-			if err != nil {
-				errCh <- err
-				break
+			select {
+			case event, ok := <- ch:
+				if !ok {
+					write(ws, websocket.OpClose, []byte{})
+					return
+				}
+				data, err := encodeEvent(event)
+				if err != nil {
+					errCh <- err
+					return
+				}
+				if err := write(ws, websocket.OpBinary, data); err != nil {
+					errCh <- err
+					return
+				}
+			case <-ticker.C:
+				if err := write(ws, websocket.OpPing, []byte{}); err != nil {
+					errCh <- err
+					return
+				}
 			}
 		}
 	}()
 	return ch, errCh
 }
 
-func receiver(ws *websocket.Conn) (<-chan []interface{}, chan error) {
+//func receiver(ws *websocket.Conn) (<-chan []interface{}, chan error) {
+//	// receives and decodes messages from users
+//	ch, errCh := make(chan []interface{}), make(chan error)
+//	go func() {
+//		for {
+//			var data []byte
+//			var event []interface{}
+//			err := ws.SetReadDeadline(time.Now().Add(1 * time.Second))
+//			if err != nil {
+//				errCh <- err
+//				break
+//			}
+//			err = websocket.Message.Receive(ws, &data)
+//			if err != nil {
+//				errCh <- err
+//				break
+//			}
+//			err = codec.NewDecoderBytes(data, &msgpackHandle).Decode(&event)
+//			if err != nil {
+//				errCh <- err
+//				break
+//			}
+//			ch <- event
+//		}
+//	}()
+//	return ch, errCh
+//}
+
+func receiver(ws *websocket.Conn) (<-chan []interface{}, chan error){
 	// receives and decodes messages from users
 	ch, errCh := make(chan []interface{}), make(chan error)
 	go func() {
+		ws.SetReadLimit(maxMessageSize)
+		ws.SetReadDeadline(time.Now().Add(readWait))
 		for {
-			var data []byte
-			var event []interface{}
-			err := ws.SetReadDeadline(time.Now().Add(1 * time.Second))
+			op, r, err := ws.NextReader()
 			if err != nil {
 				errCh <- err
 				break
 			}
-			err = websocket.Message.Receive(ws, &data)
-			if err != nil {
-				errCh <- err
+			switch op {
+			case websocket.OpPong:
+				ws.SetReadDeadline(time.Now().Add(readWait))
+			case websocket.OpBinary:
+				data, err := ioutil.ReadAll(r)
+				if err != nil {
+					errCh <- err
+					break
+				}
+				var event []interface{}
+				err = codec.NewDecoderBytes(data, &msgpackHandle).Decode(&event)
+				if err != nil {
+					errCh <- err
+					break
+				}
+				ch <- event
+			default:
+				errCh <- fmt.Errorf("bad message type: %v", op)
 				break
 			}
-			err = codec.NewDecoderBytes(data, &msgpackHandle).Decode(&event)
-			if err != nil {
-				errCh <- err
-				break
-			}
-			ch <- event
 		}
 	}()
 	return ch, errCh
