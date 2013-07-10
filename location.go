@@ -156,6 +156,10 @@ func (location *Location) main() {
 				user.Socket.Close()
 			}
 		case location.UserCount <- len(location.users):
+			if len(location.users) == 0 {
+				// We have 0 users and will be deleted from locations map now:
+				return // stop processing events for this location
+			}
 		}
 	}
 }
