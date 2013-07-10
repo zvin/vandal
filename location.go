@@ -153,9 +153,10 @@ func (location *Location) main() {
 		case <-save_tick:
 			location.save()
 		case <-location.Close:
-			for _, user := range location.users {
-				user.Kick <- true
-			}
+			// Called by CloseAllLocations when we need to quit
+			location.save()
+			location.destroy()
+			return
 		case location.UserCount <- len(location.users):
 			if len(location.users) == 0 {
 				// We have 0 users and will be deleted from locations map now:

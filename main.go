@@ -1,10 +1,9 @@
 package main
 
 import (
-//	"code.google.com/p/go.net/websocket"
-	"github.com/garyburd/go-websocket/websocket"
 	"flag"
 	"fmt"
+	"github.com/garyburd/go-websocket/websocket"
 	"html/template"
 	"io"
 	"log"
@@ -39,21 +38,22 @@ type JoinRequest struct {
 func socket_handler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != "GET" {
-        http.Error(w, "Method not allowed", 405)
-        return
-    }
-    ws, err := websocket.Upgrade(w, r.Header, nil, 1024, 1024)
-    if err != nil {
-        log.Println(err)
-        return
-    }
+		http.Error(w, "Method not allowed", 405)
+		return
+	}
+	ws, err := websocket.Upgrade(w, r.Header, nil, 1024, 1024)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	defer ws.Close()
 
 	user := NewUser(ws)
 
 	// Retrieve the site the user wants to draw over:
 	location_url, err := url.QueryUnescape(r.RequestURI[6:]) // skip "/ws?u="
 	if err != nil {
-		user.ErrorSync("Invalid query")
+		log.Printf("Invalid query: %v", err)
 		return
 	}
 
@@ -64,9 +64,11 @@ func socket_handler(w http.ResponseWriter, r *http.Request) {
 	if user_joined {
 		user.SocketHandler()
 	} else {
-		user.ErrorSync("Too much users at this location, try adding #something at the end of the URL.")
+		go func() { // user.Error will block if no SocketHandler is alive
+			user.Error("Too much users at this location, try adding #something at the end of the URL.")
+		}()
+		user.SocketHandlerNoLocation()
 	}
-	ws.Close()
 }
 
 func signal_handler(c chan os.Signal, listener net.Listener) {
@@ -113,7 +115,7 @@ func maxAgeHandler(seconds int, h http.Handler) http.Handler {
 }
 
 func main() {
-//	http.Handle("/ws", websocket.Handler(socket_handler))
+	//	http.Handle("/ws", websocket.Handler(socket_handler))
 	http.HandleFunc("/ws", socket_handler)
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(STATIC_DIR))))
 	http.Handle("/img/", maxAgeHandler(0, http.StripPrefix("/img/", http.FileServer(http.Dir(IMAGES_DIR)))))
