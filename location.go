@@ -53,11 +53,16 @@ func GetLocation(url string) *Location {
 	defer locationsMutex.Unlock()
 	location, present := locations[url]
 	if present {
-		return location
-	} else {
-		location = newLocation(url)
-		locations[url] = location
+		// a location already exists
+		count := <-location.UserCount
+		if count == 0 {
+			delete(locations, location.Url) // this location has closed, we need to recreate it
+		} else {
+			return location
+		}
 	}
+	location = newLocation(url)
+	locations[url] = location
 	return location
 }
 
@@ -74,22 +79,18 @@ func WaitLocations() {
 	locationsWait.Wait()
 }
 
-func closeLocation(location *Location) {
-	locationsMutex.Lock()
-	delete(locations, location.Url)
-	locationsMutex.Unlock()
-}
-
 func update_currently_used_sites() {
 	var sites []Website
-	locationsMutex.RLock()
+	locationsMutex.Lock()
 	for _, location := range locations {
 		count := <-location.UserCount
 		if count > 0 {
 			sites = append(sites, Website{Url: location.Url, UserCount: count})
+		} else {
+			delete(locations, location.Url) // no more users, close location
 		}
 	}
-	locationsMutex.RUnlock()
+	locationsMutex.Unlock()
 	SortWebsites(sites)
 	CurrentlyUsedSites.Mutex.Lock()
 	CurrentlyUsedSites.Sites = sites[:MinInt(len(sites), 10)]
@@ -142,8 +143,7 @@ func (location *Location) main() {
 			if len(location.users) == 0 {
 				location.save()
 				location.destroy()
-				closeLocation(location) // remove this location from locations map
-				return                  // stop processing events for this location
+				// this location will be removed from the locations map by GetLocation or update_currently_used_sites
 			}
 		case message := <-location.Message:
 			event := message.User.GotMessage(message.Event)
@@ -157,6 +157,10 @@ func (location *Location) main() {
 				user.Kick <- true
 			}
 		case location.UserCount <- len(location.users):
+			if len(location.users) == 0 {
+				// We have 0 users and will be deleted from locations map now:
+				return // stop processing events for this location
+			}
 		}
 	}
 }
