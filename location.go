@@ -143,7 +143,6 @@ func (location *Location) main() {
 				location.save()
 				location.destroy()
 				// this location will be removed from the locations map by GetLocation or update_currently_used_sites
-				return // stop processing events for this location
 			}
 		case message := <-location.Message:
 			event := message.User.GotMessage(message.Event)
