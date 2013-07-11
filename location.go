@@ -174,8 +174,12 @@ func (location *Location) destroy() {
 func (location *Location) broadcast(user *User, event []interface{}) {
 	// event.insert(1, user.UserId) ...
 	event = append(event[:1], append([]interface{}{user.UserId}, event[1:]...)...)
+	data, err := encodeEvent(event)
+	if err != nil {
+		return
+	}
 	for _, other := range location.users {
-		other.SendEvent(event)
+		other.SendData(data)
 	}
 }
 

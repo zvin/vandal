@@ -30,7 +30,7 @@ var (
 
 type User struct {
 	Socket      *websocket.Conn
-	sendEvent   chan<- []interface{}
+	sendData    chan<- []byte
 	recv        <-chan []interface{}
 	sendErr     chan error
 	recvErr     chan error
@@ -53,7 +53,7 @@ func NewUser(ws *websocket.Conn) *User {
 	user.UserId = <-userIdGenerator
 	user.Nickname = strconv.Itoa(user.UserId)
 	user.UsePen = true
-	user.sendEvent, user.sendErr = sender(user.Socket)
+	user.sendData, user.sendErr = sender(user.Socket)
 	user.recv, user.recvErr = receiver(user.Socket)
 	user.Kick = make(chan bool)
 	return user
@@ -72,21 +72,32 @@ func init() {
 
 func encodeEvent(event []interface{}) (result []byte, err error) {
 	err = codec.NewEncoderBytes(&result, &msgpackHandle).Encode(event)
+	if err != nil {
+		Log.Printf("Failed to encode event %v\n", event)
+	}
 	return result, err
 }
 
 func (user *User) Error(description string) {
 	Log.Printf("Error for user %v: %v\n", user.UserId, description)
-	user.sendEvent <- []interface{}{
-		EventTypeError,
-		description,
+	user.SendEvent([]interface{}{EventTypeError, description})
+	select { // avoid blocking if user was kicked when sending
+	case user.Kick <- true:
+	default:
 	}
-	user.Kick <- true
 }
 
 func (user *User) SendEvent(event []interface{}) {
+	data, err := encodeEvent(event)
+	if err != nil {
+		return
+	}
+	user.SendData(data)
+}
+
+func (user *User) SendData(data []byte) {
 	select {
-	case user.sendEvent <- event:
+	case user.sendData <- data:
 	default:
 		Log.Printf("Buffer full for user %v: kicking.\n", user.UserId)
 		user.Kick <- true
@@ -190,8 +201,8 @@ func write(ws *websocket.Conn, opCode int, payload []byte) error {
 	return ws.WriteMessage(opCode, payload)
 }
 
-func sender(ws *websocket.Conn) (chan<- []interface{}, chan error) {
-	ch, errCh := make(chan []interface{}, 256), make(chan error)
+func sender(ws *websocket.Conn) (chan<- []byte, chan error) {
+	ch, errCh := make(chan []byte, 256), make(chan error)
 	go func() {
 		ticker := time.NewTicker(pingPeriod)
 		defer func() {
@@ -199,14 +210,9 @@ func sender(ws *websocket.Conn) (chan<- []interface{}, chan error) {
 		}()
 		for {
 			select {
-			case event, ok := <-ch:
+			case data, ok := <-ch:
 				if !ok {
 					write(ws, websocket.OpClose, []byte{})
-					return
-				}
-				data, err := encodeEvent(event)
-				if err != nil {
-					errCh <- err
 					return
 				}
 				if err := write(ws, websocket.OpBinary, data); err != nil {
