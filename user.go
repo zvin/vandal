@@ -143,7 +143,12 @@ func (user *User) GotMessage(event []interface{}) []interface{} {
 	case EventTypeMouseDown:
 		user.mouseDown()
 	case EventTypeChangeTool:
-		user.changeTool(params[0].(int8) != 0)
+		p, err := ToInt(params[0])
+		if err != nil {
+			user.Error("Invalid tool")
+			return nil
+		}
+		user.changeTool(p != 0)
 	case EventTypeChangeColor:
 		p0, err0 := ToInt(params[0])
 		p1, err1 := ToInt(params[1])
