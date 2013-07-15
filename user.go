@@ -32,8 +32,6 @@ type User struct {
 	Socket      *websocket.Conn
 	sendData    chan<- []byte
 	recv        <-chan []interface{}
-	sendErr     chan error
-	recvErr     chan error
 	UserId      int
 	Nickname    string
 	Location    *Location
@@ -44,7 +42,7 @@ type User struct {
 	ColorGreen  int
 	ColorBlue   int
 	UsePen      bool
-	Kick        chan bool
+	Kick        chan string
 }
 
 func NewUser(ws *websocket.Conn) *User {
@@ -53,9 +51,9 @@ func NewUser(ws *websocket.Conn) *User {
 	user.UserId = <-userIdGenerator
 	user.Nickname = strconv.Itoa(user.UserId)
 	user.UsePen = true
-	user.sendData, user.sendErr = sender(user.Socket)
-	user.recv, user.recvErr = receiver(user.Socket)
-	user.Kick = make(chan bool)
+	user.sendData = user.sender()
+	user.recv = user.receiver()
+	user.Kick = make(chan string)
 	return user
 }
 
@@ -82,7 +80,7 @@ func (user *User) Error(description string) {
 	Log.Printf("Error for user %v: %v\n", user.UserId, description)
 	user.SendEvent([]interface{}{EventTypeError, description})
 	select { // avoid blocking if user was kicked when sending
-	case user.Kick <- true:
+	case user.Kick <- description:
 	default:
 	}
 }
@@ -100,12 +98,11 @@ func (user *User) SendData(data []byte) {
 	case user.sendData <- data:
 	default:
 		Log.Printf("Buffer full for user %v: kicking.\n", user.UserId)
-		user.Kick <- true
+		user.Kick <- "Buffer full"
 	}
 }
 
 func (user *User) mouseMove(x int, y int, duration int) {
-	//    fmt.Printf("mouse move\n")
 	if user.MouseIsDown {
 		user.Location.DrawLine(
 			user.PositionX, user.PositionY, // origin
@@ -206,8 +203,8 @@ func write(ws *websocket.Conn, opCode int, payload []byte) error {
 	return ws.WriteMessage(opCode, payload)
 }
 
-func sender(ws *websocket.Conn) (chan<- []byte, chan error) {
-	ch, errCh := make(chan []byte, 256), make(chan error)
+func (user *User) sender() chan<- []byte {
+	ch := make(chan []byte, 256)
 	go func() {
 		ticker := time.NewTicker(pingPeriod)
 		defer func() {
@@ -217,59 +214,59 @@ func sender(ws *websocket.Conn) (chan<- []byte, chan error) {
 			select {
 			case data, ok := <-ch:
 				if !ok {
-					write(ws, websocket.OpClose, []byte{})
+					write(user.Socket, websocket.OpClose, []byte{})
 					return
 				}
-				if err := write(ws, websocket.OpBinary, data); err != nil {
-					errCh <- err
+				if err := write(user.Socket, websocket.OpBinary, data); err != nil {
+					user.Kick <- err.Error()
 					return
 				}
 			case <-ticker.C:
-				if err := write(ws, websocket.OpPing, []byte{}); err != nil {
-					errCh <- err
+				if err := write(user.Socket, websocket.OpPing, []byte{}); err != nil {
+					user.Kick <- err.Error()
 					return
 				}
 			}
 		}
 	}()
-	return ch, errCh
+	return ch
 }
 
-func receiver(ws *websocket.Conn) (<-chan []interface{}, chan error) {
+func (user *User) receiver() <-chan []interface{} {
 	// receives and decodes messages from users
-	ch, errCh := make(chan []interface{}), make(chan error)
+	ch := make(chan []interface{})
 	go func() {
-		ws.SetReadLimit(maxMessageSize)
-		ws.SetReadDeadline(time.Now().Add(readWait))
+		user.Socket.SetReadLimit(maxMessageSize)
+		user.Socket.SetReadDeadline(time.Now().Add(readWait))
 		for {
-			op, r, err := ws.NextReader()
+			op, r, err := user.Socket.NextReader()
 			if err != nil {
-				errCh <- err
+				user.Kick <- err.Error()
 				break
 			}
 			switch op {
 			case websocket.OpPong:
-				ws.SetReadDeadline(time.Now().Add(readWait))
+				user.Socket.SetReadDeadline(time.Now().Add(readWait))
 			case websocket.OpBinary:
 				data, err := ioutil.ReadAll(r)
 				if err != nil {
-					errCh <- err
+					user.Kick <- err.Error()
 					break
 				}
 				var event []interface{}
 				err = codec.NewDecoderBytes(data, &msgpackHandle).Decode(&event)
 				if err != nil {
-					errCh <- err
+					user.Kick <- err.Error()
 					break
 				}
 				ch <- event
 			default:
-				errCh <- fmt.Errorf("bad message type: %v", op)
+				user.Kick <- fmt.Sprintf("bad message type: %v", op)
 				break
 			}
 		}
 	}()
-	return ch, errCh
+	return ch
 }
 
 func (user *User) SocketHandler() {
@@ -277,16 +274,8 @@ func (user *User) SocketHandler() {
 		select {
 		case event := <-user.recv:
 			user.Location.Message <- UserAndEvent{user, event}
-		case err := <-user.sendErr:
-			Log.Printf("send error for user %v: %v\n", user.UserId, err)
-			user.Location.Quit <- user
-			return
-		case err := <-user.recvErr:
-			Log.Printf("recv error for user %v: %v\n", user.UserId, err)
-			user.Location.Quit <- user
-			return
-		case <-user.Kick:
-			Log.Printf("user %v was kicked\n", user.UserId)
+		case err_msg := <-user.Kick:
+			Log.Printf("user %v was kicked for '%v'\n", user.UserId, err_msg)
 			user.Location.Quit <- user
 			return
 		}
@@ -297,14 +286,8 @@ func (user *User) SocketHandlerNoLocation() {
 	for {
 		select {
 		case <-user.recv:
-		case err := <-user.sendErr:
-			Log.Printf("send error for user %v: %v\n", user.UserId, err)
-			return
-		case err := <-user.recvErr:
-			Log.Printf("recv error for user %v: %v\n", user.UserId, err)
-			return
-		case <-user.Kick:
-			Log.Printf("user %v was kicked\n", user.UserId)
+		case err_msg := <-user.Kick:
+			Log.Printf("user %v was kicked for '%v'\n", user.UserId, err_msg)
 			return
 		}
 	}
