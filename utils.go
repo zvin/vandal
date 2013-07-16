@@ -63,7 +63,7 @@ func ToString(n interface{}) (result string, err error) {
 	case []uint8:
 		result = string(n.([]uint8))
 	default:
-		fmt.Printf("ToString, not a string: %#v ", n)
+		Log.Printf("ToString, not a string: %#v ", n)
 		err = errors.New("Not a string")
 	}
 	return result, err

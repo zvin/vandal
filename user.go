@@ -196,7 +196,7 @@ func (user *User) GotMessage(event []interface{}) []interface{} {
 		}
 	case EventTypeChatMessage:
 		timestamp := Timestamp()
-		msg, err = ToString(params[0])
+		msg, err := ToString(params[0])
 		if err != nil {
 			user.Error("Invalid chat message")
 			return nil
