@@ -77,7 +77,6 @@ func encodeEvent(event []interface{}) (result []byte, err error) {
 }
 
 func (user *User) Error(description string) {
-	Log.Printf("Error for user %v: %v\n", user.UserId, description)
 	user.SendEvent([]interface{}{EventTypeError, description})
 	select { // avoid blocking if user was kicked when sending
 	case user.Kick <- description:
@@ -284,7 +283,11 @@ func (user *User) SocketHandler() {
 		case event := <-user.recv:
 			user.Location.Message <- UserAndEvent{user, event}
 		case err_msg := <-user.Kick:
-			Log.Printf("user %v was kicked for '%v'\n", user.UserId, err_msg)
+			if err_msg == "EOF" {
+				Log.Printf("user %v left\n", user.UserId)
+			} else {
+				Log.Printf("user %v was kicked for '%v'\n", user.UserId, err_msg)
+			}
 			user.Location.Quit <- user
 			return
 		}
