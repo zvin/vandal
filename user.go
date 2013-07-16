@@ -12,7 +12,7 @@ import (
 const (
 	MAX_USERS_PER_LOCATION = 2
 	MAX_NICKNAME_LENGTH    = 20
-
+	SEND_CHANNEL_SIZE      = 256
 	// Time allowed to write a message to the client.
 	writeWait = 10 * time.Second
 	// Time allowed to read the next message from the client.
@@ -212,7 +212,7 @@ func write(ws *websocket.Conn, opCode int, payload []byte) error {
 }
 
 func (user *User) sender() chan<- []byte {
-	ch := make(chan []byte, 256)
+	ch := make(chan []byte, SEND_CHANNEL_SIZE)
 	go func() {
 		ticker := time.NewTicker(pingPeriod)
 		defer func() {
