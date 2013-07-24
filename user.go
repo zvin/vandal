@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	MAX_USERS_PER_LOCATION = 2
+	MAX_USERS_PER_LOCATION = 20
 	MAX_NICKNAME_LENGTH    = 20
 	SEND_CHANNEL_SIZE      = 256
 	// Time allowed to write a message to the client.
