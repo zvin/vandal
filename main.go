@@ -34,7 +34,6 @@ type JoinRequest struct {
 	resultChan chan bool
 }
 
-//func socket_handler(ws *websocket.Conn) {
 func socket_handler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != "GET" {
@@ -115,7 +114,6 @@ func maxAgeHandler(seconds int, h http.Handler) http.Handler {
 }
 
 func main() {
-	//	http.Handle("/ws", websocket.Handler(socket_handler))
 	http.HandleFunc("/ws", socket_handler)
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(STATIC_DIR))))
 	http.Handle("/img/", maxAgeHandler(0, http.StripPrefix("/img/", http.FileServer(http.Dir(IMAGES_DIR)))))
