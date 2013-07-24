@@ -21,13 +21,13 @@ var (
 
 type UserAndEvent struct {
 	User  *User
-	Event []interface{}
+	Event *[]interface{}
 }
 
 type Location struct {
 	Join         chan *JoinRequest
 	Quit         chan *User
-	Message      chan UserAndEvent
+	Message      chan *UserAndEvent
 	Close        chan bool
 	UserCount    chan int
 	Url          string
@@ -53,11 +53,16 @@ func GetLocation(url string) *Location {
 	defer locationsMutex.Unlock()
 	location, present := locations[url]
 	if present {
-		return location
-	} else {
-		location = newLocation(url)
-		locations[url] = location
+		// a location already exists
+		count := <-location.UserCount
+		if count == 0 {
+			delete(locations, location.Url) // this location has closed, we need to recreate it
+		} else {
+			return location
+		}
 	}
+	location = newLocation(url)
+	locations[url] = location
 	return location
 }
 
@@ -74,22 +79,18 @@ func WaitLocations() {
 	locationsWait.Wait()
 }
 
-func closeLocation(location *Location) {
-	locationsMutex.Lock()
-	delete(locations, location.Url)
-	locationsMutex.Unlock()
-}
-
 func update_currently_used_sites() {
 	var sites []Website
-	locationsMutex.RLock()
+	locationsMutex.Lock()
 	for _, location := range locations {
 		count := <-location.UserCount
 		if count > 0 {
 			sites = append(sites, Website{Url: location.Url, UserCount: count})
+		} else {
+			delete(locations, location.Url) // no more users, close location
 		}
 	}
-	locationsMutex.RUnlock()
+	locationsMutex.Unlock()
 	SortWebsites(sites)
 	CurrentlyUsedSites.Mutex.Lock()
 	CurrentlyUsedSites.Sites = sites[:MinInt(len(sites), 10)]
@@ -100,7 +101,7 @@ func newLocation(url string) *Location {
 	loc := new(Location)
 	loc.Join = make(chan *JoinRequest)
 	loc.Quit = make(chan *User)
-	loc.Message = make(chan UserAndEvent)
+	loc.Message = make(chan *UserAndEvent)
 	loc.Close = make(chan bool)
 	loc.UserCount = make(chan int)
 	loc.Url = url
@@ -133,16 +134,16 @@ func (location *Location) main() {
 				request.resultChan <- false
 			} else {
 				Log.Println("New user", request.user.UserId, "joins", location.Url)
-				location.addUser(request.user)
+				request.user.Location = location
 				request.resultChan <- true
+				location.addUser(request.user)
 			}
 		case user := <-location.Quit:
 			location.removeUser(user)
 			if len(location.users) == 0 {
 				location.save()
 				location.destroy()
-				closeLocation(location) // remove this location from locations map
-				return                  // stop processing events for this location
+				// this location will be removed from the locations map by GetLocation or update_currently_used_sites
 			}
 		case message := <-location.Message:
 			event := message.User.GotMessage(message.Event)
@@ -152,10 +153,15 @@ func (location *Location) main() {
 		case <-save_tick:
 			location.save()
 		case <-location.Close:
-			for _, user := range location.users {
-				user.Socket.Close()
-			}
+			// Called by CloseAllLocations when we need to quit
+			location.save()
+			location.destroy()
+			return
 		case location.UserCount <- len(location.users):
+			if len(location.users) == 0 {
+				// We have 0 users and will be deleted from locations map now:
+				return // stop processing events for this location
+			}
 		}
 	}
 }
@@ -165,20 +171,23 @@ func (location *Location) destroy() {
 	location.surface.Destroy()
 }
 
-func (location *Location) broadcast(user *User, event []interface{}) {
+func (location *Location) broadcast(user *User, event *[]interface{}) {
 	// event.insert(1, user.UserId) ...
-	event = append(event[:1], append([]interface{}{user.UserId}, event[1:]...)...)
+	*event = append((*event)[:1], append([]interface{}{user.UserId}, (*event)[1:]...)...)
+	data, err := encodeEvent(event)
+	if err != nil {
+		return
+	}
 	for _, other := range location.users {
-		other.SendEvent(event)
+		other.SendData(data)
 	}
 }
 
 func (location *Location) addUser(user *User) {
-	user.Location = location
 	// Send the list of present users to this user:
 	timestamp := Timestamp()
 	for _, other := range location.users {
-		user.SendEvent([]interface{}{
+		user.SendEvent(&[]interface{}{
 			EventTypeJoin,
 			other.UserId,
 			[]interface{}{other.PositionX, other.PositionY},
@@ -191,7 +200,7 @@ func (location *Location) addUser(user *User) {
 		})
 	}
 	// Send the delta between the image and now to the new user:
-	user.SendEvent([]interface{}{
+	user.SendEvent(&[]interface{}{
 		EventTypeWelcome,
 		location.fileName,
 		location.getDelta(),
@@ -208,7 +217,7 @@ func (location *Location) addUser(user *User) {
 		user.UsePen,
 		timestamp,
 	}
-	location.broadcast(user, event) // user is not yet in location.users, so it will not receive this event.
+	location.broadcast(user, &event) // user is not yet in location.users, so it will not receive this event.
 	// Send this user to himself
 	event = []interface{}{
 		EventTypeJoin,
@@ -221,7 +230,7 @@ func (location *Location) addUser(user *User) {
 		user.UsePen,
 		timestamp,
 	}
-	user.SendEvent(event)
+	user.SendEvent(&event)
 	location.users = append(location.users, user)
 	location.Chat.AddMessage(timestamp, "", "user "+user.Nickname+" joined")
 }
@@ -229,7 +238,7 @@ func (location *Location) addUser(user *User) {
 func (location *Location) removeUser(user *User) {
 	location.users = remove(location.users, user)
 	timestamp := Timestamp()
-	location.broadcast(user, []interface{}{EventTypeLeave, timestamp})
+	location.broadcast(user, &[]interface{}{EventTypeLeave, timestamp})
 	location.Chat.AddMessage(timestamp, "", "user "+user.Nickname+" left")
 }
 

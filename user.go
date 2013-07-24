@@ -1,14 +1,26 @@
 package main
 
 import (
-	"code.google.com/p/go.net/websocket"
+	"fmt"
+	"github.com/garyburd/go-websocket/websocket"
 	"github.com/ugorji/go/codec"
+	"io/ioutil"
 	"strconv"
+	"time"
 )
 
 const (
 	MAX_USERS_PER_LOCATION = 20
 	MAX_NICKNAME_LENGTH    = 20
+	SEND_CHANNEL_SIZE      = 256
+	// Time allowed to write a message to the client.
+	WRITE_WAIT = 5 * time.Second
+	// Time allowed to read the next message from the client.
+	READ_WAIT = 10 * time.Second
+	// Send pings to client with this period. Must be less than READ_WAIT.
+	PING_PERIOD = (READ_WAIT * 9) / 10
+	// Maximum message size allowed from client.
+	MAX_MESSAGE_SIZE = 512
 )
 
 var (
@@ -18,6 +30,8 @@ var (
 
 type User struct {
 	Socket      *websocket.Conn
+	sendData    chan<- *[]byte
+	recv        <-chan *[]interface{}
 	UserId      int
 	Nickname    string
 	Location    *Location
@@ -28,6 +42,7 @@ type User struct {
 	ColorGreen  int
 	ColorBlue   int
 	UsePen      bool
+	Kick        chan string
 }
 
 func NewUser(ws *websocket.Conn) *User {
@@ -36,6 +51,9 @@ func NewUser(ws *websocket.Conn) *User {
 	user.UserId = <-userIdGenerator
 	user.Nickname = strconv.Itoa(user.UserId)
 	user.UsePen = true
+	user.sendData = user.sender()
+	user.recv = user.receiver()
+	user.Kick = make(chan string)
 	return user
 }
 
@@ -50,37 +68,41 @@ func init() {
 	}()
 }
 
-func encodeEvent(event []interface{}) (result []byte, err error) {
-	err = codec.NewEncoderBytes(&result, &msgpackHandle).Encode(event)
+func encodeEvent(event *[]interface{}) (*[]byte, error) {
+	var result []byte
+	var err = codec.NewEncoderBytes(&result, &msgpackHandle).Encode(event)
 	if err != nil {
-		Log.Printf("Couldn't encode event '%v'\n", event)
+		Log.Printf("Failed to encode event %v\n", event)
 	}
-	return result, err
-}
-
-func (user *User) SendEvent(event []interface{}) {
-	//    fmt.Printf("sending %v\n", event)
-	//    fmt.Printf("sending %v to %d %#v\n", encodeEvent(event), user.UserId, user.Socket)
-	data, err := encodeEvent(event)
-	if err == nil {
-		err := websocket.Message.Send(user.Socket, data)
-		if err != nil {
-			Log.Printf("Couldn't send to %d: %v\n", user.UserId, err)
-			user.Socket.Close()
-		}
-	}
+	return &result, err
 }
 
 func (user *User) Error(description string) {
-	user.SendEvent([]interface{}{
-		EventTypeError,
-		description,
-	})
-	user.Socket.Close()
+	user.SendEvent(&[]interface{}{EventTypeError, description})
+	select { // avoid blocking if user was kicked when sending
+	case user.Kick <- description:
+	default:
+	}
+}
+
+func (user *User) SendEvent(event *[]interface{}) {
+	data, err := encodeEvent(event)
+	if err != nil {
+		return
+	}
+	user.SendData(data)
+}
+
+func (user *User) SendData(data *[]byte) {
+	select {
+	case user.sendData <- data:
+	default:
+		Log.Printf("Buffer full for user %v: kicking.\n", user.UserId)
+		user.Kick <- "Buffer full"
+	}
 }
 
 func (user *User) mouseMove(x int, y int, duration int) {
-	//    fmt.Printf("mouse move\n")
 	if user.MouseIsDown {
 		user.Location.DrawLine(
 			user.PositionX, user.PositionY, // origin
@@ -121,13 +143,13 @@ func (user *User) chatMessage(msg string, timestamp int64) {
 	user.Location.Chat.AddMessage(timestamp, user.Nickname, msg)
 }
 
-func (user *User) GotMessage(event []interface{}) []interface{} {
-	event_type, err := ToInt(event[0])
+func (user *User) GotMessage(event *[]interface{}) *[]interface{} {
+	event_type, err := ToInt((*event)[0])
 	if err != nil {
 		user.Error("Invalid event type")
 		return nil
 	}
-	params := event[1:]
+	params := (*event)[1:]
 	switch event_type {
 	case EventTypeMouseMove:
 		p0, err0 := ToInt(params[0])
@@ -143,7 +165,12 @@ func (user *User) GotMessage(event []interface{}) []interface{} {
 	case EventTypeMouseDown:
 		user.mouseDown()
 	case EventTypeChangeTool:
-		user.changeTool(params[0].(int8) != 0)
+		p, err := ToInt(params[0])
+		if err != nil {
+			user.Error("Invalid tool")
+			return nil
+		}
+		user.changeTool(p != 0)
 	case EventTypeChangeColor:
 		p0, err0 := ToInt(params[0])
 		p1, err1 := ToInt(params[1])
@@ -155,43 +182,126 @@ func (user *User) GotMessage(event []interface{}) []interface{} {
 		user.changeColor(p0, p1, p2)
 	case EventTypeChangeNickname:
 		timestamp := Timestamp()
-		nickname := string(params[0].([]uint8))
+		nickname, err := ToString(params[0])
+		if err != nil {
+			user.Error("Invalid nickname")
+			return nil
+		}
 		if len(nickname) <= MAX_NICKNAME_LENGTH {
 			user.changeNickname(nickname, timestamp)
-			event = append(event, timestamp)
+			*event = append(*event, timestamp)
 		} else {
 			user.Error("Nickname too long")
 			return nil
 		}
 	case EventTypeChatMessage:
 		timestamp := Timestamp()
-		user.chatMessage(string(params[0].([]uint8)), timestamp)
-		event = append(event, timestamp)
+		msg, err := ToString(params[0])
+		if err != nil {
+			user.Error("Invalid chat message")
+			return nil
+		}
+		user.chatMessage(msg, timestamp)
+		*event = append(*event, timestamp)
 	}
 	return event
 }
 
-func (user *User) SocketHandler() {
-	var buffer []byte
-	for {
-		err := websocket.Message.Receive(user.Socket, &buffer)
-		if err != nil {
-			if err.Error() == "EOF" {
-				Log.Printf("User %v closed connection.\n", user.UserId)
-			} else {
-				Log.Printf("error while reading socket for user %v: %v\n", user.UserId, err)
+func write(ws *websocket.Conn, opCode int, payload []byte) error {
+	ws.SetWriteDeadline(time.Now().Add(WRITE_WAIT))
+	return ws.WriteMessage(opCode, payload)
+}
+
+func (user *User) sender() chan<- *[]byte {
+	ch := make(chan *[]byte, SEND_CHANNEL_SIZE)
+	go func() {
+		ticker := time.NewTicker(PING_PERIOD)
+		defer func() {
+			ticker.Stop()
+		}()
+		for {
+			select {
+			case data, ok := <-ch:
+				if !ok {
+					write(user.Socket, websocket.OpClose, []byte{})
+					return
+				}
+				if err := write(user.Socket, websocket.OpBinary, *data); err != nil {
+					user.Kick <- err.Error()
+					return
+				}
+			case <-ticker.C:
+				if err := write(user.Socket, websocket.OpPing, []byte{}); err != nil {
+					user.Kick <- err.Error()
+					return
+				}
 			}
-			break
 		}
-		var event []interface{}
-		err = codec.NewDecoderBytes(buffer, &msgpackHandle).Decode(&event)
-		if err != nil {
-			Log.Printf("this is not msgpack: '%v' %v\n", buffer, err)
-			user.Error("Invalid message")
-		} else {
-			user.Location.Message <- UserAndEvent{user, event}
+	}()
+	return ch
+}
+
+func (user *User) receiver() <-chan *[]interface{} {
+	// receives and decodes messages from users
+	ch := make(chan *[]interface{})
+	go func() {
+		user.Socket.SetReadLimit(MAX_MESSAGE_SIZE)
+		user.Socket.SetReadDeadline(time.Now().Add(READ_WAIT))
+		for {
+			op, r, err := user.Socket.NextReader()
+			if err != nil {
+				user.Kick <- err.Error()
+				break
+			}
+			switch op {
+			case websocket.OpPong:
+				user.Socket.SetReadDeadline(time.Now().Add(READ_WAIT))
+			case websocket.OpBinary:
+				data, err := ioutil.ReadAll(r)
+				if err != nil {
+					user.Kick <- err.Error()
+					break
+				}
+				var event []interface{}
+				err = codec.NewDecoderBytes(data, &msgpackHandle).Decode(&event)
+				if err != nil {
+					user.Kick <- err.Error()
+					break
+				}
+				ch <- &event
+			default:
+				user.Kick <- fmt.Sprintf("bad message type: %v", op)
+				break
+			}
+		}
+	}()
+	return ch
+}
+
+func (user *User) SocketHandler() {
+	for {
+		select {
+		case event := <-user.recv:
+			user.Location.Message <- &UserAndEvent{user, event}
+		case err_msg := <-user.Kick:
+			if err_msg == "EOF" {
+				Log.Printf("user %v left\n", user.UserId)
+			} else {
+				Log.Printf("user %v was kicked for '%v'\n", user.UserId, err_msg)
+			}
+			user.Location.Quit <- user
+			return
 		}
 	}
-	user.Location.Quit <- user
-	user.Socket.Close()
+}
+
+func (user *User) SocketHandlerNoLocation() {
+	for {
+		select {
+		case <-user.recv:
+		case err_msg := <-user.Kick:
+			Log.Printf("user %v was kicked for '%v'\n", user.UserId, err_msg)
+			return
+		}
+	}
 }
