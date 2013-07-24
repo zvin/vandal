@@ -14,13 +14,13 @@ const (
 	MAX_NICKNAME_LENGTH    = 20
 	SEND_CHANNEL_SIZE      = 256
 	// Time allowed to write a message to the client.
-	writeWait = 10 * time.Second
+	WRITE_WAIT = 5 * time.Second
 	// Time allowed to read the next message from the client.
-	readWait = 60 * time.Second
-	// Send pings to client with this period. Must be less than readWait.
-	pingPeriod = (readWait * 9) / 10
+	READ_WAIT = 10 * time.Second
+	// Send pings to client with this period. Must be less than READ_WAIT.
+	PING_PERIOD = (READ_WAIT * 9) / 10
 	// Maximum message size allowed from client.
-	maxMessageSize = 512
+	MAX_MESSAGE_SIZE = 512
 )
 
 var (
@@ -208,14 +208,14 @@ func (user *User) GotMessage(event *[]interface{}) *[]interface{} {
 }
 
 func write(ws *websocket.Conn, opCode int, payload []byte) error {
-	ws.SetWriteDeadline(time.Now().Add(writeWait))
+	ws.SetWriteDeadline(time.Now().Add(WRITE_WAIT))
 	return ws.WriteMessage(opCode, payload)
 }
 
 func (user *User) sender() chan<- *[]byte {
 	ch := make(chan *[]byte, SEND_CHANNEL_SIZE)
 	go func() {
-		ticker := time.NewTicker(pingPeriod)
+		ticker := time.NewTicker(PING_PERIOD)
 		defer func() {
 			ticker.Stop()
 		}()
@@ -245,8 +245,8 @@ func (user *User) receiver() <-chan *[]interface{} {
 	// receives and decodes messages from users
 	ch := make(chan *[]interface{})
 	go func() {
-		user.Socket.SetReadLimit(maxMessageSize)
-		user.Socket.SetReadDeadline(time.Now().Add(readWait))
+		user.Socket.SetReadLimit(MAX_MESSAGE_SIZE)
+		user.Socket.SetReadDeadline(time.Now().Add(READ_WAIT))
 		for {
 			op, r, err := user.Socket.NextReader()
 			if err != nil {
@@ -255,7 +255,7 @@ func (user *User) receiver() <-chan *[]interface{} {
 			}
 			switch op {
 			case websocket.OpPong:
-				user.Socket.SetReadDeadline(time.Now().Add(readWait))
+				user.Socket.SetReadDeadline(time.Now().Add(READ_WAIT))
 			case websocket.OpBinary:
 				data, err := ioutil.ReadAll(r)
 				if err != nil {
