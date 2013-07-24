@@ -21,13 +21,13 @@ var (
 
 type UserAndEvent struct {
 	User  *User
-	Event []interface{}
+	Event *[]interface{}
 }
 
 type Location struct {
 	Join         chan *JoinRequest
 	Quit         chan *User
-	Message      chan UserAndEvent
+	Message      chan *UserAndEvent
 	Close        chan bool
 	UserCount    chan int
 	Url          string
@@ -101,7 +101,7 @@ func newLocation(url string) *Location {
 	loc := new(Location)
 	loc.Join = make(chan *JoinRequest)
 	loc.Quit = make(chan *User)
-	loc.Message = make(chan UserAndEvent)
+	loc.Message = make(chan *UserAndEvent)
 	loc.Close = make(chan bool)
 	loc.UserCount = make(chan int)
 	loc.Url = url
@@ -171,9 +171,9 @@ func (location *Location) destroy() {
 	location.surface.Destroy()
 }
 
-func (location *Location) broadcast(user *User, event []interface{}) {
+func (location *Location) broadcast(user *User, event *[]interface{}) {
 	// event.insert(1, user.UserId) ...
-	event = append(event[:1], append([]interface{}{user.UserId}, event[1:]...)...)
+	*event = append((*event)[:1], append([]interface{}{user.UserId}, (*event)[1:]...)...)
 	data, err := encodeEvent(event)
 	if err != nil {
 		return
@@ -187,7 +187,7 @@ func (location *Location) addUser(user *User) {
 	// Send the list of present users to this user:
 	timestamp := Timestamp()
 	for _, other := range location.users {
-		user.SendEvent([]interface{}{
+		user.SendEvent(&[]interface{}{
 			EventTypeJoin,
 			other.UserId,
 			[]interface{}{other.PositionX, other.PositionY},
@@ -200,7 +200,7 @@ func (location *Location) addUser(user *User) {
 		})
 	}
 	// Send the delta between the image and now to the new user:
-	user.SendEvent([]interface{}{
+	user.SendEvent(&[]interface{}{
 		EventTypeWelcome,
 		location.fileName,
 		location.getDelta(),
@@ -217,7 +217,7 @@ func (location *Location) addUser(user *User) {
 		user.UsePen,
 		timestamp,
 	}
-	location.broadcast(user, event) // user is not yet in location.users, so it will not receive this event.
+	location.broadcast(user, &event) // user is not yet in location.users, so it will not receive this event.
 	// Send this user to himself
 	event = []interface{}{
 		EventTypeJoin,
@@ -230,7 +230,7 @@ func (location *Location) addUser(user *User) {
 		user.UsePen,
 		timestamp,
 	}
-	user.SendEvent(event)
+	user.SendEvent(&event)
 	location.users = append(location.users, user)
 	location.Chat.AddMessage(timestamp, "", "user "+user.Nickname+" joined")
 }
@@ -238,7 +238,7 @@ func (location *Location) addUser(user *User) {
 func (location *Location) removeUser(user *User) {
 	location.users = remove(location.users, user)
 	timestamp := Timestamp()
-	location.broadcast(user, []interface{}{EventTypeLeave, timestamp})
+	location.broadcast(user, &[]interface{}{EventTypeLeave, timestamp})
 	location.Chat.AddMessage(timestamp, "", "user "+user.Nickname+" left")
 }
 

@@ -30,8 +30,8 @@ var (
 
 type User struct {
 	Socket      *websocket.Conn
-	sendData    chan<- []byte
-	recv        <-chan []interface{}
+	sendData    chan<- *[]byte
+	recv        <-chan *[]interface{}
 	UserId      int
 	Nickname    string
 	Location    *Location
@@ -68,23 +68,24 @@ func init() {
 	}()
 }
 
-func encodeEvent(event []interface{}) (result []byte, err error) {
-	err = codec.NewEncoderBytes(&result, &msgpackHandle).Encode(event)
+func encodeEvent(event *[]interface{}) (*[]byte, error) {
+	var result []byte
+	var err = codec.NewEncoderBytes(&result, &msgpackHandle).Encode(event)
 	if err != nil {
 		Log.Printf("Failed to encode event %v\n", event)
 	}
-	return result, err
+	return &result, err
 }
 
 func (user *User) Error(description string) {
-	user.SendEvent([]interface{}{EventTypeError, description})
+	user.SendEvent(&[]interface{}{EventTypeError, description})
 	select { // avoid blocking if user was kicked when sending
 	case user.Kick <- description:
 	default:
 	}
 }
 
-func (user *User) SendEvent(event []interface{}) {
+func (user *User) SendEvent(event *[]interface{}) {
 	data, err := encodeEvent(event)
 	if err != nil {
 		return
@@ -92,7 +93,7 @@ func (user *User) SendEvent(event []interface{}) {
 	user.SendData(data)
 }
 
-func (user *User) SendData(data []byte) {
+func (user *User) SendData(data *[]byte) {
 	select {
 	case user.sendData <- data:
 	default:
@@ -142,13 +143,13 @@ func (user *User) chatMessage(msg string, timestamp int64) {
 	user.Location.Chat.AddMessage(timestamp, user.Nickname, msg)
 }
 
-func (user *User) GotMessage(event []interface{}) []interface{} {
-	event_type, err := ToInt(event[0])
+func (user *User) GotMessage(event *[]interface{}) *[]interface{} {
+	event_type, err := ToInt((*event)[0])
 	if err != nil {
 		user.Error("Invalid event type")
 		return nil
 	}
-	params := event[1:]
+	params := (*event)[1:]
 	switch event_type {
 	case EventTypeMouseMove:
 		p0, err0 := ToInt(params[0])
@@ -188,7 +189,7 @@ func (user *User) GotMessage(event []interface{}) []interface{} {
 		}
 		if len(nickname) <= MAX_NICKNAME_LENGTH {
 			user.changeNickname(nickname, timestamp)
-			event = append(event, timestamp)
+			*event = append(*event, timestamp)
 		} else {
 			user.Error("Nickname too long")
 			return nil
@@ -201,7 +202,7 @@ func (user *User) GotMessage(event []interface{}) []interface{} {
 			return nil
 		}
 		user.chatMessage(msg, timestamp)
-		event = append(event, timestamp)
+		*event = append(*event, timestamp)
 	}
 	return event
 }
@@ -211,8 +212,8 @@ func write(ws *websocket.Conn, opCode int, payload []byte) error {
 	return ws.WriteMessage(opCode, payload)
 }
 
-func (user *User) sender() chan<- []byte {
-	ch := make(chan []byte, SEND_CHANNEL_SIZE)
+func (user *User) sender() chan<- *[]byte {
+	ch := make(chan *[]byte, SEND_CHANNEL_SIZE)
 	go func() {
 		ticker := time.NewTicker(pingPeriod)
 		defer func() {
@@ -225,7 +226,7 @@ func (user *User) sender() chan<- []byte {
 					write(user.Socket, websocket.OpClose, []byte{})
 					return
 				}
-				if err := write(user.Socket, websocket.OpBinary, data); err != nil {
+				if err := write(user.Socket, websocket.OpBinary, *data); err != nil {
 					user.Kick <- err.Error()
 					return
 				}
@@ -240,9 +241,9 @@ func (user *User) sender() chan<- []byte {
 	return ch
 }
 
-func (user *User) receiver() <-chan []interface{} {
+func (user *User) receiver() <-chan *[]interface{} {
 	// receives and decodes messages from users
-	ch := make(chan []interface{})
+	ch := make(chan *[]interface{})
 	go func() {
 		user.Socket.SetReadLimit(maxMessageSize)
 		user.Socket.SetReadDeadline(time.Now().Add(readWait))
@@ -267,7 +268,7 @@ func (user *User) receiver() <-chan []interface{} {
 					user.Kick <- err.Error()
 					break
 				}
-				ch <- event
+				ch <- &event
 			default:
 				user.Kick <- fmt.Sprintf("bad message type: %v", op)
 				break
@@ -281,7 +282,7 @@ func (user *User) SocketHandler() {
 	for {
 		select {
 		case event := <-user.recv:
-			user.Location.Message <- UserAndEvent{user, event}
+			user.Location.Message <- &UserAndEvent{user, event}
 		case err_msg := <-user.Kick:
 			if err_msg == "EOF" {
 				Log.Printf("user %v left\n", user.UserId)
