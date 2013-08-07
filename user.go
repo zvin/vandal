@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"strconv"
 	"time"
+	"unicode/utf8"
 )
 
 const (
@@ -187,7 +188,7 @@ func (user *User) GotMessage(event *[]interface{}) *[]interface{} {
 			user.Error("Invalid nickname")
 			return nil
 		}
-		if len(nickname) <= MAX_NICKNAME_LENGTH {
+		if utf8.RuneCountInString(nickname) <= MAX_NICKNAME_LENGTH {
 			user.changeNickname(nickname, timestamp)
 			*event = append(*event, timestamp)
 		} else {
