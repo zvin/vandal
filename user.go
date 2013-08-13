@@ -21,7 +21,8 @@ const (
 	// Send pings to client with this period. Must be less than READ_WAIT.
 	PING_PERIOD = (READ_WAIT * 9) / 10
 	// Maximum message size allowed from client.
-	MAX_MESSAGE_SIZE = 512
+	// must be at least 4 * MAX_CHAT_MESSAGE_LENGTH (in script.js)
+	MAX_MESSAGE_SIZE = 1024
 )
 
 var (
