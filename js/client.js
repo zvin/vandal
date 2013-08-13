@@ -56,7 +56,7 @@ function send_chat_message(msg){
     if (msg != ""){
         send_event([
             EventType.chat_message,
-            msg
+            msg.slice(0, MAX_CHAT_MESSAGE_LENGTH) // truncate if too long
         ])
     }
 }

@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"strconv"
 	"time"
+	"unicode/utf8"
 )
 
 const (
@@ -20,7 +21,8 @@ const (
 	// Send pings to client with this period. Must be less than READ_WAIT.
 	PING_PERIOD = (READ_WAIT * 9) / 10
 	// Maximum message size allowed from client.
-	MAX_MESSAGE_SIZE = 512
+	// must be at least 4 * MAX_CHAT_MESSAGE_LENGTH (in script.js)
+	MAX_MESSAGE_SIZE = 1024
 )
 
 var (
@@ -187,7 +189,7 @@ func (user *User) GotMessage(event *[]interface{}) *[]interface{} {
 			user.Error("Invalid nickname")
 			return nil
 		}
-		if len(nickname) <= MAX_NICKNAME_LENGTH {
+		if utf8.RuneCountInString(nickname) <= MAX_NICKNAME_LENGTH {
 			user.changeNickname(nickname, timestamp)
 			*event = append(*event, timestamp)
 		} else {
