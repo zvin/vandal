@@ -51,7 +51,7 @@ ul{
 	margin: 0 0 0 20px;
 	background: url(/static/link.png) no-repeat 10px 8px #00cfb4;
 	-webkit-border-radius: 15px;
-    border-radius: 15px;
+	border-radius: 15px;
 	-webkit-box-shadow: 5px 5px 0px 0px #000000;
 	box-shadow: 5px 5px 0px 0px #000000;
 	cursor: pointer;
@@ -85,7 +85,7 @@ p{
 	margin: 65px 0 0 0;
 	border: 1px solid #CCC;
 	-webkit-border-radius: 15px;
-    border-radius: 15px;
+	border-radius: 15px;
 	-webkit-box-shadow: 3px 3px 5px 2px #ccc;
 	box-shadow: 3px 3px 5px 2px #ccc;
 }
