@@ -18,7 +18,7 @@ function User(user_id, position, color, mouse_is_down, it_is_me, nickname, use_p
             this.label.appendChild(text)
             this.label.style.position = "absolute"
             this.label.style.paddingLeft = "16px"
-            this.label.style.zIndex = reverse_zindex(4)
+            this.label.style.zIndex = 1
             this.label.style.background = "url(http://" + DOMAIN + "/static/crosshair.png) no-repeat"
             this.reposition_label()
             frame_div.appendChild(this.label)

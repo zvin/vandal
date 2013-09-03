@@ -114,7 +114,7 @@ function create_toolbar(){
     toolbar.appendChild(tool_on)
     toolbar.appendChild(button_close)
     toolbar.appendChild(handle)
-    toolbar.style.zIndex = reverse_zindex(1)
+    toolbar.style.zIndex = 4
     document.body.appendChild(toolbar)
 
 
@@ -162,7 +162,7 @@ function create_loading_box(){
         "font-style"      : "normal",
         "line-height"     : "50px",
         "text-align"      : "center",
-        "z-index"         :  reverse_zindex(0)
+        "z-index"         :  5
     })
     progress_bar = document.createElement("progress")
     progress_bar.value = 0
@@ -194,7 +194,7 @@ function create_warning_box(){
         "line-height"     : "50px",
         "text-align"      : "center",
         "display"         : "none",
-        "z-index"         :  reverse_zindex(0)
+        "z-index"         :  5
     })
     warning_box.appendChild(document.createTextNode("Disconnected"))
     document.body.appendChild(warning_box)
@@ -253,7 +253,7 @@ function create_chat_window(){
         "text-align"      : "left",
         "font-style"      : "normal",
         "line-height"     : "16px",
-        "z-index"         : reverse_zindex(2),
+        "z-index"         : 3,
         "overflow-y"      : "auto",
         "overflow-x"      : "hidden",
         "word-wrap"       : "break-word",
@@ -309,11 +309,6 @@ function add_message(msg, timestamp){
     }else{
         messages_div.insertBefore(msg, messages_div.firstChild)
     }
-}
-
-function reverse_zindex(level){
-    // level 0 is on top
-    return MAX_ZINDEX - level
 }
 
 function get_my_color(){

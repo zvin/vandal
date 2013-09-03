@@ -101,7 +101,6 @@ function create_socket(){
         "position"     : "absolute",
         "left"         : 0,
         "top"          : 0,
-        "z-index"      : reverse_zindex(5),
         "outline"      : "10px dashed #F30B55"
     })
     mask_canvas = create_element("canvas", {
@@ -109,7 +108,7 @@ function create_socket(){
         "cursor"       : "crosshair",
         "left"         : 0,
         "top"          : 0,
-        "z-index"      : reverse_zindex(3)
+        "z-index"      : 2
     })
     canvas.width = WIDTH
     mask_canvas.width = WIDTH

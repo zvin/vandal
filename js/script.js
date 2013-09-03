@@ -3,7 +3,6 @@ var DOMAIN                  = "DOMAIN_PLACEHOLDER",
     WIDTH                   = 2000,
     HEIGHT                  = 3000,
     MOUSEMOVE_DELAY         = 16,  // minimum time (in ms) between two mousemove events; 16ms ~= 60Hz
-    MAX_ZINDEX              = 2147483647,
     MAX_NICKNAME_LENGTH     = 20,
     MAX_CHAT_MESSAGE_LENGTH = 256,
     this_script             = document.documentElement.lastChild,
