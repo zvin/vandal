@@ -63,11 +63,7 @@ function create_toolbar(){
         send_change_tool(0)
         tool_on.style.left = "100px"
     }
-    button_close.onclick = function(){
-        if (confirm("Do you really want to close the draw pad?")){
-            destroy()
-        }
-    }
+    button_close.onclick = destroy
     // color
     if (document.compatMode == "BackCompat"){
         button_color.style.width = "26px"
