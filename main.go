@@ -61,12 +61,12 @@ func socket_handler(w http.ResponseWriter, r *http.Request) {
 	location.Join <- request
 	user_joined := <-request.resultChan
 	if user_joined {
-		user.SocketHandler()
+		user.SocketHandler(location)
 	} else {
 		go func() { // user.Error will block if no SocketHandler is alive
 			user.Error("Too much users at this location, try adding #something at the end of the URL.")
 		}()
-		user.SocketHandlerNoLocation()
+		user.SocketHandler(nil)
 	}
 }
 

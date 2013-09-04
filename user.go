@@ -280,29 +280,22 @@ func (user *User) receiver() <-chan *[]interface{} {
 	return ch
 }
 
-func (user *User) SocketHandler() {
+func (user *User) SocketHandler(location *Location) {
 	for {
 		select {
 		case event := <-user.recv:
-			user.Location.Message <- &UserAndEvent{user, event}
+			if location != nil {
+				location.Message <- &UserAndEvent{user, event}
+			}
 		case err_msg := <-user.Kick:
 			if err_msg == "EOF" {
 				Log.Printf("user %v left\n", user.UserId)
 			} else {
 				Log.Printf("user %v was kicked for '%v'\n", user.UserId, err_msg)
 			}
-			user.Location.Quit <- user
-			return
-		}
-	}
-}
-
-func (user *User) SocketHandlerNoLocation() {
-	for {
-		select {
-		case <-user.recv:
-		case err_msg := <-user.Kick:
-			Log.Printf("user %v was kicked for '%v'\n", user.UserId, err_msg)
+			if location != nil {
+				user.Location.Quit <- user
+			}
 			return
 		}
 	}
