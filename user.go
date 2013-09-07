@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"strconv"
 	"time"
-	"unicode/utf8"
 )
 
 const (
@@ -36,7 +35,6 @@ type User struct {
 	recv        <-chan *[]interface{}
 	UserId      int
 	Nickname    string
-	Location    *Location
 	MouseIsDown bool
 	PositionX   int
 	PositionY   int
@@ -110,15 +108,6 @@ func (user *User) SendData(data *[]byte) {
 }
 
 func (user *User) mouseMove(x int, y int, duration int) {
-	if user.MouseIsDown {
-		user.Location.DrawLine(
-			user.PositionX, user.PositionY, // origin
-			x, y, // destination
-			duration,                                       // duration
-			user.ColorRed, user.ColorGreen, user.ColorBlue, // color
-			user.UsePen, // pen or eraser
-		)
-	}
 	user.PositionX = x
 	user.PositionY = y
 }
@@ -141,76 +130,8 @@ func (user *User) changeColor(red, green, blue int) {
 	user.ColorBlue = blue
 }
 
-func (user *User) changeNickname(nickname string, timestamp int64) {
-	user.Location.Chat.AddMessage(timestamp, "", user.Nickname+" is now known as "+nickname)
+func (user *User) changeNickname(nickname string) {
 	user.Nickname = nickname
-}
-
-func (user *User) chatMessage(msg string, timestamp int64) {
-	user.Location.Chat.AddMessage(timestamp, user.Nickname, msg)
-}
-
-func (user *User) GotMessage(event *[]interface{}) *[]interface{} {
-	event_type, err := ToInt((*event)[0])
-	if err != nil {
-		user.Error("Invalid event type")
-		return nil
-	}
-	params := (*event)[1:]
-	switch event_type {
-	case EventTypeMouseMove:
-		p0, err0 := ToInt(params[0])
-		p1, err1 := ToInt(params[1])
-		p2, err2 := ToInt(params[2])
-		if err0 != nil || err1 != nil || err2 != nil {
-			user.Error("Invalid mouse move")
-			return nil
-		}
-		user.mouseMove(p0, p1, p2)
-	case EventTypeMouseUp:
-		user.mouseUp()
-	case EventTypeMouseDown:
-		user.mouseDown()
-	case EventTypeChangeTool:
-		p, err := ToInt(params[0])
-		if err != nil {
-			user.Error("Invalid tool")
-			return nil
-		}
-		user.changeTool(p != 0)
-	case EventTypeChangeColor:
-		p0, err0 := ToInt(params[0])
-		p1, err1 := ToInt(params[1])
-		p2, err2 := ToInt(params[2])
-		if err0 != nil || err1 != nil || err2 != nil {
-			user.Error("Invalid color")
-			return nil
-		}
-		user.changeColor(p0, p1, p2)
-	case EventTypeChangeNickname:
-		nickname, err := ToString(params[0])
-		if err != nil {
-			user.Error("Invalid nickname")
-			return nil
-		}
-		if utf8.RuneCountInString(nickname) > MAX_NICKNAME_LENGTH {
-			user.Error("Nickname too long")
-			return nil
-		}
-		timestamp := Timestamp()
-		user.changeNickname(nickname, timestamp)
-		*event = append(*event, timestamp)
-	case EventTypeChatMessage:
-		msg, err := ToString(params[0])
-		if err != nil {
-			user.Error("Invalid chat message")
-			return nil
-		}
-		timestamp := Timestamp()
-		user.chatMessage(msg, timestamp)
-		*event = append(*event, timestamp)
-	}
-	return event
 }
 
 func write(ws *websocket.Conn, opCode int, payload []byte) error {
@@ -286,9 +207,9 @@ func (user *User) receiver() <-chan *[]interface{} {
 }
 
 func (user *User) SocketHandler(location *Location) {
-    defer func() {
-        close(user.sendData)
-    }()
+	defer func() {
+		close(user.sendData)
+	}()
 	for {
 		select {
 		case event, ok := <-user.recv:

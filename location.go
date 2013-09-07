@@ -5,6 +5,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 )
 
 const (
@@ -134,7 +135,6 @@ func (location *Location) main() {
 				request.resultChan <- false
 			} else {
 				Log.Println("New user", request.user.UserId, "joins", location.Url)
-				request.user.Location = location
 				request.resultChan <- true
 				location.addUser(request.user)
 			}
@@ -146,7 +146,7 @@ func (location *Location) main() {
 				// this location will be removed from the locations map by GetLocation or update_currently_used_sites
 			}
 		case message := <-location.Message:
-			event := message.User.GotMessage(message.Event)
+			event := location.UserGotEvent(message.User, message.Event)
 			if event != nil {
 				location.broadcast(message.User, event)
 			}
@@ -276,6 +276,79 @@ func (location *Location) save() {
 		location.delta = nil
 	}
 	location.Chat.Save()
+}
+
+func (location *Location) UserGotEvent(user *User, event *[]interface{}) *[]interface{} {
+	event_type, err := ToInt((*event)[0])
+	if err != nil {
+		user.Error("Invalid event type")
+		return nil
+	}
+	params := (*event)[1:]
+	switch event_type {
+	case EventTypeMouseMove:
+		x, err0 := ToInt(params[0])
+		y, err1 := ToInt(params[1])
+		duration, err2 := ToInt(params[2])
+		if err0 != nil || err1 != nil || err2 != nil {
+			user.Error("Invalid mouse move")
+			return nil
+		}
+		if user.MouseIsDown {
+			location.DrawLine(
+				user.PositionX, user.PositionY, // origin
+				x, y, // destination
+				duration,                                       // duration
+				user.ColorRed, user.ColorGreen, user.ColorBlue, // color
+				user.UsePen, // pen or eraser
+			)
+		}
+		user.mouseMove(x, y, duration)
+	case EventTypeMouseUp:
+		user.mouseUp()
+	case EventTypeMouseDown:
+		user.mouseDown()
+	case EventTypeChangeTool:
+		p, err := ToInt(params[0])
+		if err != nil {
+			user.Error("Invalid tool")
+			return nil
+		}
+		user.changeTool(p != 0)
+	case EventTypeChangeColor:
+		p0, err0 := ToInt(params[0])
+		p1, err1 := ToInt(params[1])
+		p2, err2 := ToInt(params[2])
+		if err0 != nil || err1 != nil || err2 != nil {
+			user.Error("Invalid color")
+			return nil
+		}
+		user.changeColor(p0, p1, p2)
+	case EventTypeChangeNickname:
+		nickname, err := ToString(params[0])
+		if err != nil {
+			user.Error("Invalid nickname")
+			return nil
+		}
+		if utf8.RuneCountInString(nickname) > MAX_NICKNAME_LENGTH {
+			user.Error("Nickname too long")
+			return nil
+		}
+		timestamp := Timestamp()
+		location.Chat.AddMessage(timestamp, "", user.Nickname+" is now known as "+nickname)
+		user.changeNickname(nickname)
+		*event = append(*event, timestamp)
+	case EventTypeChatMessage:
+		msg, err := ToString(params[0])
+		if err != nil {
+			user.Error("Invalid chat message")
+			return nil
+		}
+		timestamp := Timestamp()
+		location.Chat.AddMessage(timestamp, user.Nickname, msg)
+		*event = append(*event, timestamp)
+	}
+	return event
 }
 
 func remove(list []*User, value *User) []*User {
