@@ -14,9 +14,11 @@ const (
 )
 
 var (
-	locations          = make(map[string]*Location)
+	locations struct {
+		sync.RWMutex
+		m map[string]*Location
+	}
 	locationsWait      sync.WaitGroup
-	locationsMutex     sync.RWMutex
 	CurrentlyUsedSites LockableWebsiteSlice
 )
 
@@ -41,6 +43,7 @@ type Location struct {
 }
 
 func init() {
+	locations.m = make(map[string]*Location)
 	go func() {
 		tick := time.Tick(10 * time.Second)
 		for _ = range tick {
@@ -50,30 +53,30 @@ func init() {
 }
 
 func GetLocation(url string) *Location {
-	locationsMutex.Lock()
-	defer locationsMutex.Unlock()
-	location, present := locations[url]
+	locations.Lock()
+	defer locations.Unlock()
+	location, present := locations.m[url]
 	if present {
 		// a location already exists
 		count := <-location.UserCount
 		if count == 0 {
-			delete(locations, location.Url) // this location has closed, we need to recreate it
+			delete(locations.m, location.Url) // this location has closed, we need to recreate it
 		} else {
 			return location
 		}
 	}
 	location = newLocation(url)
-	locations[url] = location
+	locations.m[url] = location
 	return location
 }
 
 func CloseAllLocations() {
-	locationsMutex.Lock()
-	for _, loc := range locations {
+	locations.Lock()
+	for _, loc := range locations.m {
 		loc.Close <- true
-		delete(locations, loc.Url)
+		delete(locations.m, loc.Url)
 	}
-	locationsMutex.Unlock()
+	locations.Unlock()
 }
 
 func WaitLocations() {
@@ -82,16 +85,16 @@ func WaitLocations() {
 
 func update_currently_used_sites() {
 	var sites []Website
-	locationsMutex.Lock()
-	for _, location := range locations {
+	locations.Lock()
+	for _, location := range locations.m {
 		count := <-location.UserCount
 		if count > 0 {
 			sites = append(sites, Website{Url: location.Url, UserCount: count})
 		} else {
-			delete(locations, location.Url) // no more users, close location
+			delete(locations.m, location.Url) // no more users, close location
 		}
 	}
-	locationsMutex.Unlock()
+	locations.Unlock()
 	SortWebsites(sites)
 	CurrentlyUsedSites.Mutex.Lock()
 	CurrentlyUsedSites.Sites = sites[:MinInt(len(sites), 10)]
