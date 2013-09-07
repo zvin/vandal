@@ -44,7 +44,7 @@ type User struct {
 	ColorGreen  int
 	ColorBlue   int
 	UsePen      bool
-	Kick        chan string
+	kick        chan string
 }
 
 func NewUser(ws *websocket.Conn) *User {
@@ -55,7 +55,7 @@ func NewUser(ws *websocket.Conn) *User {
 	user.UsePen = true
 	user.sendData = user.sender()
 	user.recv = user.receiver()
-	user.Kick = make(chan string)
+	user.kick = make(chan string)
 	return user
 }
 
@@ -79,12 +79,17 @@ func encodeEvent(event *[]interface{}) (*[]byte, error) {
 	return &result, err
 }
 
+func (user *User) Kick(description string) {
+	select {
+	case user.kick <- description:
+	default:
+		// SocketHandler has already returned, avoid blocking
+	}
+}
+
 func (user *User) Error(description string) {
 	user.SendEvent(&[]interface{}{EventTypeError, description})
-	select { // avoid blocking if user was kicked when sending
-	case user.Kick <- description:
-	default:
-	}
+	user.Kick(description)
 }
 
 func (user *User) SendEvent(event *[]interface{}) {
@@ -100,7 +105,7 @@ func (user *User) SendData(data *[]byte) {
 	case user.sendData <- data:
 	default:
 		Log.Printf("Buffer full for user %v: kicking.\n", user.UserId)
-		user.Kick <- "Buffer full"
+		user.Kick("Buffer full")
 	}
 }
 
@@ -229,12 +234,12 @@ func (user *User) sender() chan<- *[]byte {
 					return
 				}
 				if err := write(user.Socket, websocket.OpBinary, *data); err != nil {
-					user.Kick <- err.Error()
+					user.Kick(err.Error())
 					return
 				}
 			case <-ticker.C:
 				if err := write(user.Socket, websocket.OpPing, []byte{}); err != nil {
-					user.Kick <- err.Error()
+					user.Kick(err.Error())
 					return
 				}
 			}
@@ -252,7 +257,7 @@ func (user *User) receiver() <-chan *[]interface{} {
 		for {
 			op, r, err := user.Socket.NextReader()
 			if err != nil {
-				user.Kick <- err.Error()
+				user.Kick(err.Error())
 				break
 			}
 			switch op {
@@ -261,33 +266,40 @@ func (user *User) receiver() <-chan *[]interface{} {
 			case websocket.OpBinary:
 				data, err := ioutil.ReadAll(r)
 				if err != nil {
-					user.Kick <- err.Error()
+					user.Kick(err.Error())
 					break
 				}
 				var event []interface{}
 				err = codec.NewDecoderBytes(data, &msgpackHandle).Decode(&event)
 				if err != nil {
-					user.Kick <- err.Error()
+					user.Kick(err.Error())
 					break
 				}
 				ch <- &event
 			default:
-				user.Kick <- fmt.Sprintf("bad message type: %v", op)
+				user.Kick(fmt.Sprintf("bad message type: %v", op))
 				break
 			}
 		}
+		close(ch)
 	}()
 	return ch
 }
 
 func (user *User) SocketHandler(location *Location) {
+    defer func() {
+        close(user.sendData)
+    }()
 	for {
 		select {
-		case event := <-user.recv:
+		case event, ok := <-user.recv:
+			if !ok {
+				return
+			}
 			if location != nil {
 				location.Message <- &UserAndEvent{user, event}
 			}
-		case err_msg := <-user.Kick:
+		case err_msg := <-user.kick:
 			if err_msg == "EOF" {
 				Log.Printf("user %v left\n", user.UserId)
 			} else {
