@@ -188,26 +188,25 @@ func (user *User) GotMessage(event *[]interface{}) *[]interface{} {
 		}
 		user.changeColor(p0, p1, p2)
 	case EventTypeChangeNickname:
-		timestamp := Timestamp()
 		nickname, err := ToString(params[0])
 		if err != nil {
 			user.Error("Invalid nickname")
 			return nil
 		}
-		if utf8.RuneCountInString(nickname) <= MAX_NICKNAME_LENGTH {
-			user.changeNickname(nickname, timestamp)
-			*event = append(*event, timestamp)
-		} else {
+		if utf8.RuneCountInString(nickname) > MAX_NICKNAME_LENGTH {
 			user.Error("Nickname too long")
 			return nil
 		}
-	case EventTypeChatMessage:
 		timestamp := Timestamp()
+		user.changeNickname(nickname, timestamp)
+		*event = append(*event, timestamp)
+	case EventTypeChatMessage:
 		msg, err := ToString(params[0])
 		if err != nil {
 			user.Error("Invalid chat message")
 			return nil
 		}
+		timestamp := Timestamp()
 		user.chatMessage(msg, timestamp)
 		*event = append(*event, timestamp)
 	}
