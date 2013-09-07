@@ -305,7 +305,7 @@ func (user *User) SocketHandler(location *Location) {
 				Log.Printf("user %v was kicked for '%v'\n", user.UserId, err_msg)
 			}
 			if location != nil {
-				user.Location.Quit <- user
+				location.Quit <- user
 			}
 			return
 		}
