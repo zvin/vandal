@@ -220,11 +220,7 @@ func (user *User) SocketHandler(location *Location) {
 				location.Message <- &UserAndEvent{user, event}
 			}
 		case err_msg := <-user.kick:
-			if err_msg == "EOF" {
-				Log.Printf("user %v left\n", user.UserId)
-			} else {
-				Log.Printf("user %v was kicked for '%v'\n", user.UserId, err_msg)
-			}
+			Log.Printf("user %v left (%v)\n", user.UserId, err_msg)
 			if location != nil {
 				location.Quit <- user
 			}
