@@ -1,107 +1,104 @@
-*{
-	margin: 0;
-	padding: 0;
-}
-
-body{
-	font: 12px/15px Arial, Helvetica, sans-serif;
-	background: url(/static/main.png) no-repeat center top;
-}
-
-#conteneur{
-	width: 560px;
-	margin: 20px auto;
-
-}
-
-a{
-	color: #396;
-}
-
-a:hover{
-	color: #F30B55;
-}
-
-ul{
-	list-style-position: inside;
-}
-
-.logo{
-	float: left;
-	width: 163px;
-	height: 30px;
-	padding: 120px 0 0 0;
-	background: url(/static/eatponies.png) no-repeat;
-	text-align: center;
-	font-size: 22px;
-	line-height: 30px;
-}
-
-.logo + div{
-	float: left;
-	width: 100px;
-	height: 150px;
-	background: url(/static/arrow.png) no-repeat 10px 50px;
-}
-
-.link{
-	float: left;
-	width: 163px;
-	height: 140px;
-	margin: 0 0 0 20px;
-	background: url(/static/link.png) no-repeat 10px 8px #00cfb4;
-	-webkit-border-radius: 15px;
-	border-radius: 15px;
-	-webkit-box-shadow: 5px 5px 0px 0px #000000;
-	box-shadow: 5px 5px 0px 0px #000000;
-	cursor: pointer;
-}
-
-.link:hover{
-	position: relative;
-	left: 5px;
-	top: 5px;
-	background: url(/static/link.png) no-repeat 10px 6px #F30B55;
-	-webkit-box-shadow: 0px 0px 0px 0px #000;
-	box-shadow: 0px 0px 0px 0px #000;
-}
-
-.link a{
-	opacity: 0;
-	height: 140px;
-	display: block;
-}
-
-#header,
-p{
-	overflow: auto;
-}
-
-.part{
-	clear: both;
-	position: relative;
-	width: 520px;
-	padding: 20px;
-	margin: 65px 0 0 0;
-	border: 1px solid #CCC;
-	-webkit-border-radius: 15px;
-	border-radius: 15px;
-	-webkit-box-shadow: 3px 3px 5px 2px #ccc;
-	box-shadow: 3px 3px 5px 2px #ccc;
-}
-
-.part h1{
-	position: absolute;
-	left: 20px;
-	top: -31px;
-	font-size: 36px;
+@charset "utf-8";
+/* CSS Document */
+@font-face{
+	font-family: "Life Savers";
+	src: url('LifeSavers-Regular.woff') format('woff');
 	font-weight: normal;
-	line-height: 36px;
+	font-style: normal;
 }
+*{
+	margin:0;
+	padding:0;
+}
+body{
+	font:14px/18px Arial, Helvetica, sans-serif;
+	color:#333;
+	background-color:#FFF;
+}
+#conteneur{
+	width:750px;
+	margin:0 auto 30px auto;
 
-.part img{
-	float: right;
-	margin: 0 0 0 20px;
+}
+a{
+	color:#F30B55;
+}
+a:hover{
+	color:#333;
+}
+ul{
+	list-style-position:inside;
+}
+#header{
+	overflow:hidden;
+	margin:20px 0;
+}
+.link{
+	display:block;
+	float:left;
+	width:170px;
+	height:50px;
+	padding:100px 0 0 0;
+	margin:0 0 5px 5px;
+	background:url(/static/EatPonies.png) no-repeat 25px 8px #e8efef;
+	-webkit-border-radius: 15px;
+	border-radius: 15px;
+	-webkit-box-shadow:  -5px 5px 0px 0px #666;
+	box-shadow:  -5px 5px 0px 0px #666;
+	cursor:pointer;
+	text-align:center;
+	font-size:20px;
+	color:#000;
+	text-decoration:none;
+	line-height:50px;
+}
+.link:hover{
+	position:relative;
+	left:-5px;
+	top:5px;
+	box-shadow:  0px 0px 0px 0px #666;
+}
+h1{
+	float:left;
+	width:545px;
+	margin:25px 0 0 30px;
+	padding:0;
+	font: 50px/60px 'Life Savers', Arial, Helvetica, sans-serif;
+}
+h2{
+	clear:both;
+	margin:30px 0 10px 0;
+	padding:0;
+	font: 30px/36px 'Life Savers', Arial, Helvetica, sans-serif;
+	color:#000;
+}
+.explanation{
+	width:360px;
+	margin:30px 30px 30px 0;
+	float:left;
+}
+.explanation + .explanation{
+	margin:30px 0 30px 0;
+}
+.explanation img {
+	border:1px solid #ccc;
+}
+.explanation p,
+.drawing h2{
+	font: 18px/22px Arial, Helvetica, sans-serif;
+	margin:0 0 15px 0;
+}
+.drawing{
+	clear:both;
+	min-height:688px;
+	background:url(/static/drawing.jpg) no-repeat left bottom;
+}
+.drawing ul {
+	padding:10px;
+	width:340px;
+	max-height:70px;
+	overflow:auto;
+	border:1px solid #ccc;
 }
 
 .commit{

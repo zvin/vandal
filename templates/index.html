@@ -1,64 +1,71 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="UTF-8">
-        <title>Eat Ponies</title>
-        <link href="static/style.css" rel="stylesheet" type="text/css" />
-    </head>
-    <body onload="">
-        <div id="conteneur">
-            <div id="header">
-                <div class="logo">EatPonies.com</div>
-                <div>&nbsp;</div>
-                <div class="link">
-                    <a href="javascript: (function () { if (window.webinvader_pad){window.webinvader_pad.destroy()}else{var scr = document.createElement('script'); scr.type = 'text/javascript'; scr.src = 'http://DOMAIN_PLACEHOLDER/static/script.js?rand='+Math.random(); document.documentElement.appendChild(scr); }})();" onclick="alert('Please drag this link to your bookmarks bar. Then you can click it.'); return false">EatPonies.com</a>
-                </div>
-            </div>
-            <div class="part">
-            <h1>EatPonies.com</h1>
-                <p>Eatponies is a website where you can find a bookmarklet to draw over any webpage simultaneously with other people.</p>
-                <p>If you used to be fan of <a href="http://mrdoob.com/projects/multiuserpad/">Multiuser Sketchpad</a>, currently closed, you can now draw here. Main difference, instead of having a blank page, you can go draw over any webpage.</p>
-                <p>It's something between <a href="http://goggles.sneakygcr.net/">Goggles</a> and Multiuser Sketchpad.</p>
-            </div>
-            <div class="part">
-                <h1>How it works</h1>
-                <p><img src="static/toolbar.png" width="296" height="156" alt="toolbar" />Bookmark the link on the top (drag it to your favorites) then go to any (non-https) website and launch the bookmark. You will be able to see the other people's drawings and add your own creations.</p>
-            </div>
-            <div class="part">
-                <h1>Currently</h1>
-                <table>
-                    <tr>
-                        <th>Url</th>
-                        <th>Users</th>
-                    </tr>
-                    {{range $v := .}}
-                    <tr>
-                        <td><a href="{{$v.Url}}">{{$v.Url}}</a></td>
-                        <td>{{$v.UserCount}}</td>
-                    </tr>
-                    {{end}}
-                </table>
-            </div>
-            <div class="part">
-                <h1>Warning</h1>
-                <p>There is no control on what people draw and you may come upon offending or shoking content.</p>
-                <p>Each contributor is morally reponsible for his drawings. EatPonies is not responsible for the content and drawings.</p>
-            </div>
-            <div class="part">
-                <h1>Limitations</h1>
-                <ul>
-                    <li>Works only in Firefox, Chrome and Epiphany.</li>
-                    <li>You only have a 2000x3000 px surface to draw on.</li>
-                    <li>URLs are limited to 251 characters.</li>
-                    <li>Only 20 people can draw on the same webpage simultaneously.</li>
-                    <li>The eraser lags.</li>
-                </ul>
-            </div>
-            <div class="part">
-                <h1>Source</h1>
-                <a href="https://github.com/zvin/vandal">source code</a>
-            </div>
-        </div>
-        <div class="commit">commit: COMMIT_PLACEHOLDER</div>
-    </body>
+	<head>
+		<title>Eat Ponies</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<link href="static/style.css" rel="stylesheet" type="text/css"/>
+	</head>
+	<body onload="if(window.chrome){document.getElementById('firefox_div').style.display='none';document.getElementById('chrome_div').style.display=''}">
+		<div id="conteneur">
+			<div id="header">
+				<a href="javascript: (function () { if (window.webinvader_pad){window.webinvader_pad.destroy()}else{var scr = document.createElement('script'); scr.type = 'text/javascript'; scr.src = 'http://DOMAIN_PLACEHOLDER/static/script.js?rand='+Math.random(); document.documentElement.appendChild(scr); }})();" onclick="alert('Please drag this link to your bookmarks bar. Then you can click it.'); return false" class="link">EatPonies.com</a>
+				<h1>
+					A bookmarklet<br/>
+					to draw over the web !
+				</h1>
+			</div>
+
+			<div id="firefox_div">
+				<div class="explanation">
+					<p>1. Right-click on the button<br/>
+					and bookmark the link</p>
+					<img src="static/firefox_1.png" alt="add bookmark" height="211" width="360"/>
+				</div>
+				<div class="explanation">
+					<p>2. Click on the bookmarklet<br/>
+					to draw on any non-https website</p>
+					<img src="static/firefox_2.png" alt="launch bookmark" height="211" width="360"/>
+				</div>
+			</div>
+			<div id="chrome_div" style="display: none">
+				<div class="explanation">
+					<p>1. Drag-and-drop the button<br/>
+					on the bookmarks bar</p>
+					<img src="static/chrome_1.png" alt="add bookmark" height="211" width="360"/>
+				</div>
+				<div class="explanation">
+					<p>2. Click on the bookmarklet<br/>
+					to draw on any non-https website</p>
+					<img src="static/chrome_2.png" alt="launch bookmark" height="211" width="360"/>
+				</div>
+			</div>
+
+			<div class="drawing">
+				<h2>Currently you can join :</h2>
+				<ul>
+					{{range $v := .}}
+					<li><a href="{{$v.Url}}">{{$v.Url}}</a> ({{$v.UserCount}})</li>
+					{{end}}
+				</ul>
+			</div>
+			<h2>About</h2>
+			<p>Eatponies is a website where you can find a bookmarklet to draw over any webpage simultaniously with other people.</p>
+			<p>If you used to be fan of <a href="http://mrdoob.com/projects/multiuserpad/">Multiuser Sketchpad</a>, currently closed, you can now draw here. Main difference, instead of having a blank page, you can go draw over any webpage.</p>
+			<p>It's something between <a href="http://goggles.sneakygcr.net/">Goggles</a> and Multiuser Sketchpad. </p>
+			<h2>Warning</h2>
+			<p>There is no control on what people draw and you may come upon offending or shoking content.</p>
+			<p>Each contributor is morally reponsible for his drawings. EatPonies is not responsible for the content and drawings. </p>
+			<h2>Limitations</h2>
+			<ul>
+				<li>Works only in Firefox, Chrome and Epiphany.</li>
+				<li>You only have a 2000x3000 px surface to draw on.</li>
+				<li>URLs are limited to 251 characters.</li>
+				<li>Only 20 people can draw on the same webpage simultaneously.</li>
+				<li>The eraser lags.</li>
+			</ul>
+			<h2>Source</h2>
+			<a href="https://github.com/zvin/vandal">source code</a>
+			<div class="commit">commit: COMMIT_PLACEHOLDER</div>
+		</div>
+	</body>
 </html>
