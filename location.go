@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/zvin/gocairo"
 	"strings"
 	"sync"
@@ -84,20 +85,32 @@ func WaitLocations() {
 }
 
 func update_currently_used_sites() {
-	var sites []Website
+	var sites []*Website
 	locations.Lock()
 	for _, location := range locations.m {
 		count := <-location.UserCount
 		if count > 0 {
-			sites = append(sites, Website{Url: location.Url, UserCount: count})
+			site := new(Website)
+			site.Url = location.Url
+			site.UserCount = count
+			sites = append(sites, site)
 		} else {
 			delete(locations.m, location.Url) // no more users, close location
 		}
 	}
 	locations.Unlock()
 	SortWebsites(sites)
+	sites = sites[:MinInt(len(sites), 10)]
+	for _, site := range sites {
+		site.Label = TruncateString(site.Url, 30)
+		site.UserCountLabel = fmt.Sprintf(
+			"%d %s",
+			site.UserCount,
+			Pluralize("user", site.UserCount),
+		)
+	}
 	CurrentlyUsedSites.Mutex.Lock()
-	CurrentlyUsedSites.Sites = sites[:MinInt(len(sites), 10)]
+	CurrentlyUsedSites.Sites = sites
 	CurrentlyUsedSites.Mutex.Unlock()
 }
 

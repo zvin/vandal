@@ -12,7 +12,7 @@ import (
 
 type LockableWebsiteSlice struct {
 	Mutex sync.RWMutex
-	Sites []Website
+	Sites []*Website
 }
 
 func Base64Encode(data string) string {
@@ -67,4 +67,17 @@ func ToString(n interface{}) (result string, err error) {
 		err = errors.New("Not a string")
 	}
 	return result, err
+}
+
+func Pluralize(s string, nb int) string {
+	if nb > 1 {
+		return s + "s"
+	} else {
+		return s
+	}
+}
+
+func TruncateString(s string, nb int) string {
+	// TODO: utf8, add "..." if needed
+	return s[:MinInt(len(s), nb)]
 }

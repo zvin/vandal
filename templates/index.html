@@ -41,12 +41,14 @@
 			</div>
 
 			<div class="drawing">
+				{{if .}}
 				<h2>Currently you can join :</h2>
 				<ul>
 					{{range $v := .}}
-					<li><a href="{{$v.Url}}">{{$v.Url}}</a> ({{$v.UserCount}})</li>
+					<li><a href="{{$v.Url}}">{{$v.Label}}</a> ({{$v.UserCountLabel}})</li>
 					{{end}}
 				</ul>
+				{{end}}
 			</div>
 			<h2>About</h2>
 			<p>Eatponies is a website where you can find a bookmarklet to draw over any webpage simultaniously with other people.</p>

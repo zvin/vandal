@@ -5,11 +5,13 @@ import (
 )
 
 type Website struct {
-	Url       string
-	UserCount int
+	Url            string
+	Label          string
+	UserCount      int
+	UserCountLabel string
 }
 
-type ranking []Website
+type ranking []*Website
 
 func (r ranking) Len() int {
 	return len(r)
@@ -23,6 +25,6 @@ func (r ranking) Swap(i, j int) {
 	r[i], r[j] = r[j], r[i]
 }
 
-func SortWebsites(sites []Website) {
+func SortWebsites(sites []*Website) {
 	sort.Sort(ranking(sites))
 }
