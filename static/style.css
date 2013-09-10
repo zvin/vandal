@@ -6,6 +6,44 @@
 	font-weight: normal;
 	font-style: normal;
 }
+@keyframes shake{
+	0% { transform: translate(2px, 1px) rotate(0deg); }
+	10% { transform: translate(-1px, -2px) rotate(-1deg); }
+	20% { transform: translate(-3px, 0px) rotate(1deg); }
+	30% { transform: translate(0px, 2px) rotate(0deg); }
+	40% { transform: translate(1px, -1px) rotate(1deg); }
+	50% { transform: translate(-1px, 2px) rotate(-1deg); }
+	60% { transform: translate(-3px, 1px) rotate(0deg); }
+	70% { transform: translate(2px, 1px) rotate(-1deg); }
+	80% { transform: translate(-1px, -1px) rotate(1deg); }
+	90% { transform: translate(2px, 2px) rotate(0deg); }
+	100% { transform: translate(1px, -2px) rotate(-1deg); }
+}
+@-webkit-keyframes shake {
+	0% { -webkit-transform: translate(2px, 1px) rotate(0deg); }
+	10% { -webkit-transform: translate(-1px, -2px) rotate(-1deg); }
+	20% { -webkit-transform: translate(-3px, 0px) rotate(1deg); }
+	30% { -webkit-transform: translate(0px, 2px) rotate(0deg); }
+	40% { -webkit-transform: translate(1px, -1px) rotate(1deg); }
+	50% { -webkit-transform: translate(-1px, 2px) rotate(-1deg); }
+	60% { -webkit-transform: translate(-3px, 1px) rotate(0deg); }
+	70% { -webkit-transform: translate(2px, 1px) rotate(-1deg); }
+	80% { -webkit-transform: translate(-1px, -1px) rotate(1deg); }
+	90% { -webkit-transform: translate(2px, 2px) rotate(0deg); }
+	100% { -webkit-transform: translate(1px, -2px) rotate(-1deg); }
+}
+.shake:hover {
+	animation-name: shake;
+	animation-duration: 0.8s;
+	transform-origin:50% 50%;
+	animation-iteration-count: infinite;
+	animation-timing-function: linear;
+	-webkit-animation-name: shake;
+	-webkit-animation-duration: 0.8s;
+	-webkit-transform-origin:50% 50%;
+	-webkit-animation-iteration-count: infinite;
+	-webkit-animation-timing-function: linear;
+}
 *{
 	margin:0;
 	padding:0;
@@ -34,6 +72,7 @@ ul{
 	margin:20px 0;
 }
 .link{
+	outline: 0;
 	display:block;
 	float:left;
 	width:170px;
@@ -43,20 +82,12 @@ ul{
 	background:url(/static/EatPonies.png) no-repeat 25px 8px #e8efef;
 	-webkit-border-radius: 15px;
 	border-radius: 15px;
-	-webkit-box-shadow:  -5px 5px 0px 0px #666;
-	box-shadow:  -5px 5px 0px 0px #666;
 	cursor:pointer;
 	text-align:center;
 	font-size:20px;
 	color:#000;
 	text-decoration:none;
 	line-height:50px;
-}
-.link:hover{
-	position:relative;
-	left:-5px;
-	top:5px;
-	box-shadow:  0px 0px 0px 0px #666;
 }
 h1{
 	float:left;
