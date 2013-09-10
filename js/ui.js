@@ -424,7 +424,7 @@ function unwrap_document_from_iframe(){
 }
 
 function wrap_document_in_iframe(){
-    var height = document.documentElement.scrollHeight
+    var height = Math.max(document.documentElement.scrollHeight, HEIGHT)
     var content = []
     for (var i=0; i<document.documentElement.childNodes.length; i++){
         var child = document.documentElement.childNodes[i]
