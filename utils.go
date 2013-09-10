@@ -5,9 +5,12 @@ import (
 	"encoding/base64"
 	"errors"
 	"math"
+	"net/url"
 	"reflect"
+	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 )
 
 type LockableWebsiteSlice struct {
@@ -78,6 +81,21 @@ func Pluralize(s string, nb int) string {
 }
 
 func TruncateString(s string, nb int) string {
-	// TODO: utf8, add "..." if needed
-	return s[:MinInt(len(s), nb)]
+	length := utf8.RuneCountInString(s)
+	if length <= nb {
+		return s
+	} else {
+		letters := strings.Split(s, "")
+		letters = append(letters[:nb-1], "…")
+		return strings.Join(letters, "")
+	}
+}
+
+func TryQueryUnescape(s string) string {
+	label, err := url.QueryUnescape(s)
+	if err != nil {
+		Log.Printf("Unescaping url %s failed\n", s)
+		label = s
+	}
+	return label
 }

@@ -93,7 +93,8 @@ h2{
 	min-height:688px;
 	background:url(/static/drawing.jpg) no-repeat left bottom;
 }
-.drawing ul {
+.drawing ul,
+.drawing p {
 	padding:10px;
 	width:340px;
 	max-height:70px;

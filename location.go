@@ -102,7 +102,7 @@ func update_currently_used_sites() {
 	SortWebsites(sites)
 	sites = sites[:MinInt(len(sites), 10)]
 	for _, site := range sites {
-		site.Label = TruncateString(site.Url, 30)
+		site.Label = TruncateString(TryQueryUnescape(site.Url), 30)
 		site.UserCountLabel = fmt.Sprintf(
 			"%d %s",
 			site.UserCount,
@@ -150,7 +150,7 @@ func (location *Location) main() {
 			if len(location.users) >= MAX_USERS_PER_LOCATION {
 				request.resultChan <- false
 			} else {
-				Log.Println("New user", request.user.UserId, "joins", location.Url)
+				Log.Println("New user", request.user.UserId, "joins", TryQueryUnescape(location.Url))
 				request.resultChan <- true
 				location.addUser(request.user)
 			}
