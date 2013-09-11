@@ -79,8 +79,7 @@ ul{
 	height:50px;
 	padding:100px 0 0 0;
 	margin:0 0 5px 5px;
-	background:url(/static/EatPonies.png) no-repeat 25px 8px #e8efef;
-	-webkit-border-radius: 15px;
+	background:url(/static/EatPonies.png) no-repeat 25px 8px, linear-gradient(45deg, #c3cfde 1%,#dbe7f6 100%);
 	border-radius: 15px;
 	cursor:pointer;
 	text-align:center;
