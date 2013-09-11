@@ -45,7 +45,7 @@
 				<h2>Currently you can join :</h2>
 				<ul>
 					{{range $v := .}}
-					<li><a href="{{$v.Url}}">{{$v.Label}}</a> ({{$v.UserCountLabel}})</li>
+					<li><a href="{{$v.Url}}" rel="nofollow">{{$v.Label}}</a> ({{$v.UserCountLabel}})</li>
 					{{end}}
 				</ul>
 				{{else}}
