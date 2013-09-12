@@ -207,9 +207,6 @@ func (user *User) receiver() <-chan *[]interface{} {
 }
 
 func (user *User) SocketHandler(location *Location) {
-	defer func() {
-		close(user.sendData)
-	}()
 	for {
 		select {
 		case event, ok := <-user.recv:
