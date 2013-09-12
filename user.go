@@ -207,6 +207,12 @@ func (user *User) receiver() <-chan *[]interface{} {
 }
 
 func (user *User) SocketHandler(location *Location) {
+	defer func() {
+		if location != nil {
+			location.Quit <- user
+			Log.Printf("user %v left\n", user.UserId)
+		}
+	}()
 	for {
 		select {
 		case event, ok := <-user.recv:
@@ -217,10 +223,7 @@ func (user *User) SocketHandler(location *Location) {
 				location.Message <- &UserAndEvent{user, event}
 			}
 		case err_msg := <-user.kick:
-			Log.Printf("user %v left (%v)\n", user.UserId, err_msg)
-			if location != nil {
-				location.Quit <- user
-			}
+			Log.Printf("user %v kicked for '%v'\n", user.UserId, err_msg)
 			return
 		}
 	}
