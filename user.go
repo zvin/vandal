@@ -16,7 +16,7 @@ const (
 	// Time allowed to write a message to the client.
 	WRITE_WAIT = 5 * time.Second
 	// Time allowed to read the next message from the client.
-	READ_WAIT = 10 * time.Second
+	READ_WAIT = 15 * time.Second
 	// Send pings to client with this period. Must be less than READ_WAIT.
 	PING_PERIOD = (READ_WAIT * 9) / 10
 	// Maximum message size allowed from client.
