@@ -388,7 +388,7 @@ function load_image(url){
 
     function showImage(){
         var blob = new Blob([new Uint8Array(request.response)], {"type": "image/png"});
-        copy_img_in_canvas(URL.createObjectURL(blob))
+        copy_img_in_canvas((window.URL||window.webkitURL).createObjectURL(blob))
     }
 }
 
