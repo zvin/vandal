@@ -67,3 +67,5 @@ License along with this program, in the file "COPYING".  If not, see
 js/jscolor.js is available under the GNU LESSER GENERAL PUBLIC LICENSE.
 
 js/msgpack.codec.js is available under the MIT LICENSE.
+
+static/LifeSavers-Regular.woff is available under SIL Open Font License (OFL)
