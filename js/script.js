@@ -54,11 +54,6 @@ this.destroy = destroy
 
 //function init(){
 
-    if (document.location.protocol == "https:"){
-        alert("Sorry, eatponies.com does not work on https websites.")
-        return
-    }
-
     wrap_document_in_iframe()
 
     create_toolbar()
