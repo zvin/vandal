@@ -1,7 +1,7 @@
 var DOMAIN                  = "DOMAIN_PLACEHOLDER",
     HTTPS_PORT              = "HTTPS_PORT_PLACEHOLDER",
     HTTP_PORT               = "HTTP_PORT_PLACEHOLDER",
-    SECURE                  = document.location.protocol.endsWith("s:") ? "s" : "",
+    SECURE                  = (document.location.protocol == "https:") ? "s" : "",
     CROSSHAIR_HALF_SIZE     = 8,
     WIDTH                   = 2000,
     HEIGHT                  = 3000,
