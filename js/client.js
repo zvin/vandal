@@ -89,7 +89,7 @@ function decode_msgpack(data){
 
 function create_socket(){
     mySocket = new WebSocket(
-        'ws://' + DOMAIN + "/ws?u=" + encodeURIComponent(
+        'ws' + SECURE + '://' + DOMAIN + ":" + (SECURE ? HTTPS_PORT : HTTP_PORT) + "/ws?u=" + encodeURIComponent(
             document.location.href
         )
     )
@@ -207,7 +207,7 @@ function gotmessage(event){
     }else if (type == EventType.chat_message){
         add_chat_message(user.get_label(), event[0], event[1])
     }else if (type == EventType.welcome){
-        load_image("http://" + DOMAIN + "/" + event[0])          // image url
+        load_image("http" + SECURE + "://" + DOMAIN + ":" + (SECURE ? HTTPS_PORT : HTTP_PORT) + "/" + event[0])          // image url
         draw_delta(event[1])                                     // delta
         display_chat_log(event[2])                               // chat history
     }else if (type == EventType.change_nickname){

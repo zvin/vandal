@@ -7,7 +7,6 @@ import (
 	"html/template"
 	"io"
 	"log"
-	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -23,9 +22,12 @@ const (
 )
 
 var (
-	port           *int  = flag.Int("p", 8000, "Port to listen.")
-	foreground     *bool = flag.Bool("f", false, "Log on stdout.")
-	index_template       = template.Must(template.ParseFiles("templates/index.html"))
+	http_port      *int    = flag.Int("p", 8000, "Port to listen for http.")
+	https_port     *int    = flag.Int("sp", 4430, "Port to listen for https.")
+	certfile       *string = flag.String("cert", "cert", "Certificate file.")
+	keyfile        *string = flag.String("key", "key", "Key file.")
+	foreground     *bool   = flag.Bool("f", false, "Log on stdout.")
+	index_template         = template.Must(template.ParseFiles("templates/index.html"))
 	Log            *log.Logger
 )
 
@@ -70,10 +72,11 @@ func socket_handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func signal_handler(c chan os.Signal, listener net.Listener) {
+func signal_handler(c chan os.Signal) {
 	Log.Printf("signal %v\n", <-c)
-	listener.Close() // stop accepting new connections
 	CloseAllLocations()
+	WaitLocations()
+	os.Exit(0)
 }
 
 func init() {
@@ -118,17 +121,22 @@ func main() {
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(STATIC_DIR))))
 	http.Handle("/img/", maxAgeHandler(0, http.StripPrefix("/img/", http.FileServer(http.Dir(IMAGES_DIR)))))
 	http.Handle("/", http.HandlerFunc(index_handler))
-	Log.Printf("Listening on port %d\n", *port)
-
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
-	if err != nil {
-		panic("Listen: " + err.Error())
-	}
 
 	SignalChan := make(chan os.Signal)
-	go signal_handler(SignalChan, listener)
+	go signal_handler(SignalChan)
 	signal.Notify(SignalChan, os.Interrupt, os.Kill)
 
-	http.Serve(listener, nil)
-	WaitLocations()
+	go func() {
+		Log.Printf("Listening on port %d\n", *https_port)
+		err := http.ListenAndServeTLS(fmt.Sprintf(":%d", *https_port), *certfile, *keyfile, nil)
+		if err != nil {
+			panic("ListenAndServeTLS: " + err.Error())
+		}
+	}()
+
+	Log.Printf("Listening on port %d\n", *http_port)
+	err := http.ListenAndServe(fmt.Sprintf(":%d", *http_port), nil)
+	if err != nil {
+		panic("ListenAndServe: " + err.Error())
+	}
 }

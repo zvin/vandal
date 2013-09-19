@@ -29,7 +29,7 @@ User.prototype.create_label = function(){
         this.label.style.position = "absolute"
         this.label.style.paddingLeft = "16px"
         this.label.style.zIndex = 1
-        this.label.style.background = "url(http://" + DOMAIN + "/static/crosshair.png) no-repeat"
+        this.label.style.background = "url(http://" + DOMAIN + ":" + HTTP_PORT + "/static/crosshair.png) no-repeat"
         this.reposition_label()
         frame_div.appendChild(this.label)
     }

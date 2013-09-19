@@ -13,7 +13,7 @@
 var jscolor = {
 
 
-	dir : 'http://DOMAIN_PLACEHOLDER/static/', // location of jscolor directory (leave empty to autodetect)
+	dir : 'http://DOMAIN_PLACEHOLDER:HTTP_PORT_PLACEHOLDER/static/', // location of jscolor directory (leave empty to autodetect)
 	bindClass : 'color', // class name
 	binding : true, // automatic binding via <input class="...">
 	preloading : true, // use image preloading?

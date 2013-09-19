@@ -15,7 +15,7 @@ function create_toolbar(){
             "height"    : "50px",
             "float"     : "left",
             "cursor"    : "pointer",
-            "background": "url(http://" + DOMAIN + "/static/" + background + ") no-repeat scroll 6px 6px transparent"
+            "background": "url(http://" + DOMAIN + ":" + HTTP_PORT + "/static/" + background + ") no-repeat scroll 6px 6px transparent"
         })
         return button
     }
@@ -100,7 +100,7 @@ function create_toolbar(){
     handle.style.width = "14px"
     handle.style.height = "50px"
     handle.style.cssFloat = "right"
-    handle.style.background = "url(http://" + DOMAIN + "/static/handle.png) no-repeat scroll 0 0 transparent"
+    handle.style.background = "url(http://" + DOMAIN + ":" + HTTP_PORT + "/static/handle.png) no-repeat scroll 0 0 transparent"
     // end handle
     toolbar.appendChild(button_color)
     toolbar.appendChild(button_pen)
@@ -227,7 +227,7 @@ function create_chat_window(){
         "left"      : "150px",
         "height"    : "40px",
         "width"     : "60px",
-        "background": "url(http://" + DOMAIN + "/static/buddy.png) no-repeat scroll 6px 6px transparent"
+        "background": "url(http://" + DOMAIN + ":" + HTTP_PORT + "/static/buddy.png) no-repeat scroll 6px 6px transparent"
     })
     var input = create_element("input", {
         "width"           : "100%",

@@ -24,7 +24,11 @@ Install dependencies
 Build
 -----
 
- * put the domain you are going to use into the DOMAIN file (defaults to localhost:8000)
+ * put the domain you are going to use into the DOMAIN file (defaults to localhost)
+
+ * put the http port you are going to use into the HTTP_PORT file (defaults to 8000)
+
+ * put the https port you are going to use into the HTTPS_PORT file (defaults to 4430)
 
  * set the content of the DEBUG file to 'true' or 'false' (true if you want no minification)
 
@@ -37,15 +41,25 @@ Build
 Run the server
 --------------
 
+ * generate a certificate and a key for https
+
+    ```shell
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout build/key -out build/cert
+    ```
+
  * run the server
 
     ```shell
     cd build
-    ./vandal -p 8000 -f
+    ./vandal -p 8000 -sp 4430 -cert /path/to/certfile -key /path/to/keyfile -f
     ```
 
  * open your browser at http://localhost:8000
  * -f means print the logs on stdout
+ * -p HTTP_PORT
+ * -sp HTTPS_PORT (https is needed to be able to draw over https websites)
+ * -cert defaults to "cert"
+ * -key defaults to "key"
 
 License
 -------
