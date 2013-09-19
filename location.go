@@ -77,11 +77,8 @@ func CloseAllLocations() {
 		loc.Close <- true
 		delete(locations.m, loc.Url)
 	}
-	locations.Unlock()
-}
-
-func WaitLocations() {
 	locationsWait.Wait()
+	locations.Unlock()
 }
 
 func update_currently_used_sites() {

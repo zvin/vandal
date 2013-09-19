@@ -75,7 +75,6 @@ func socket_handler(w http.ResponseWriter, r *http.Request) {
 func signal_handler(c chan os.Signal) {
 	Log.Printf("signal %v\n", <-c)
 	CloseAllLocations()
-	WaitLocations()
 	os.Exit(0)
 }
 
