@@ -44,7 +44,7 @@ func socket_handler(w http.ResponseWriter, r *http.Request) {
 	}
 	ws, err := websocket.Upgrade(w, r.Header, nil, 1024, 1024)
 	if err != nil {
-		log.Println(err)
+		Log.Println(err)
 		return
 	}
 	defer ws.Close()
@@ -54,7 +54,7 @@ func socket_handler(w http.ResponseWriter, r *http.Request) {
 	// Retrieve the site the user wants to draw over:
 	location_url, err := url.QueryUnescape(r.RequestURI[6:]) // skip "/ws?u="
 	if err != nil {
-		log.Printf("Invalid query: %v", err)
+		Log.Printf("Invalid query: %v", err)
 		return
 	}
 
