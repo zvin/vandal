@@ -413,7 +413,7 @@ function put_embeds_down(){
             embed.setAttribute("wmode", "opaque")
             parent.removeChild(embed)
             setTimeout(function(){parent.appendChild(embed)}, 0)
-            setTimeout(function(){embed.stopVideo()}, 1000)
+            setTimeout(function(){embed.stopVideo()}, 2000)
         }
     }
 }
@@ -425,42 +425,63 @@ function unwrap_document_from_iframe(){
 
 function wrap_document_in_iframe(){
     var height = Math.max(document.documentElement.scrollHeight, HEIGHT)
-    var content = []
-    for (var i=0; i<document.documentElement.childNodes.length; i++){
-        var child = document.documentElement.childNodes[i]
-        content.push(document.documentElement.removeChild(child))
-    }
+    var html = document.documentElement.innerHTML
     document.documentElement.innerHTML = ""
     frame_div = create_element("div", {
         "position": "relative",
         "width"   : WIDTH + "px",
         "margin"  : "auto"
     })
-    frame = create_element("iframe", {
-        "width"   : "100%",
-        "height"  : height + "px",
-        "overflow": "hidden",
-        "border"  : 0
-    })
-    frame.onload = put_embeds_down
-    frame_div.appendChild(frame)
-    document.body.appendChild(frame_div)
-    setTimeout(
-        function(){
-            // copy html content
-            for (var i=0; i<content.length; i++){
-                frame.contentWindow.document.documentElement.appendChild(content.pop())
-            }
-            // copy globals
-            for (var key in window){
-                if (window.hasOwnProperty(key)){
-                    try{
-                        frame.contentWindow[key] = window[key]
-                    }catch(err){
-                    }
+    function create_frame(){
+        return create_element("iframe", {
+            "width"   : "100%",
+            "height"  : height + "px",
+            "overflow": "hidden",
+            "border"  : 0
+        })
+    }
+    frame = create_frame()
+    frame.onload = function(){
+        // copy window content into iframe
+        for (var key in window){
+            if (window.hasOwnProperty(key)){
+                try{
+                    frame.contentWindow[key] = window[key]
+                }catch(err){
                 }
             }
-        },
-        100
-    )
+        }
+        frame.onload = function(){
+            var frame_document = undefined
+            try{
+                frame_document = frame.contentWindow.document
+            }catch(err){
+            }
+            if (frame_document == undefined) {
+                // X-Frame-Options is probably set to 'DENY':
+                // the window content was not copied, try another method:
+                // recreate the frame and copy innerHTML
+                frame_div.removeChild(frame)
+                frame = create_frame()
+                frame_div.appendChild(frame)
+                // remove this script from html
+                html = html.substring(0, html.lastIndexOf("<script "))
+                // setTimeout is needed in firefox
+                setTimeout(
+                    function(){
+                        // copy innerHTML
+                        frame.contentWindow.document.documentElement.innerHTML = html
+                    },
+                    0
+                )
+                // put embeds down when loaded
+                frame.onload = put_embeds_down
+            } else {
+                // content successfully copied into the frame
+                put_embeds_down()
+            }
+        }
+    }
+    frame_div.appendChild(frame)
+    document.body.appendChild(frame_div)
 }
