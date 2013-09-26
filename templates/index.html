@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>Eat Ponies</title>
+		<title>Collaborative &amp; persistent drawing over any web page - EatPonies.com</title>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 		<link href="static/style.css" rel="stylesheet" type="text/css"/>
 	</head>
 	<body onload="if(window.chrome){document.getElementById('firefox_div').style.display='none';document.getElementById('chrome_div').style.display=''}">
 		<div id="conteneur">
 			<div id="header">
-				<a href="javascript: (function () { if (window.webinvader_pad){window.webinvader_pad.destroy()}else{var scr = document.createElement('script'); scr.type = 'text/javascript'; scr.src = 'https://DOMAIN_PLACEHOLDER:HTTPS_PORT_PLACEHOLDER/static/script.js?rand='+Math.random(); document.documentElement.appendChild(scr); }})();" onclick="alert('Please drag this link to your bookmarks bar. Then you can click it.'); return false" class="link shake">EatPonies.com</a>
+				<a href="javascript: (function () { if (window.webinvader_pad){window.webinvader_pad.destroy()}else{var scr = document.createElement('script'); scr.type = 'text/javascript'; scr.src = 'https://DOMAIN_PLACEHOLDER:HTTPS_PORT_PLACEHOLDER/static/script.js?rand='+Math.random(); document.documentElement.appendChild(scr); }})();" onclick="alert('Please bookmark this link first. Then you can click it. (instructions below)'); return false" class="link shake">EatPonies.com</a>
 				<h1>
 					A bookmarklet<br/>
 					to draw over the web !
@@ -66,6 +66,7 @@
 				<li>URLs are limited to 251 characters.</li>
 				<li>Only 20 people can draw on the same webpage simultaneously.</li>
 				<li>The eraser lags.</li>
+				<li>Some sites (like github) do not allow bookmarklets by using <a href="http://en.wikipedia.org/wiki/Content_Security_Policy">Content Security Policy</a>.</li>
 			</ul>
 			<h2>Source</h2>
 			<a href="https://github.com/zvin/vandal">source code</a>
