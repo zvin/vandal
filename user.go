@@ -16,9 +16,9 @@ const (
 	// Time allowed to write a message to the client.
 	WRITE_WAIT = 5 * time.Second
 	// Time allowed to read the next message from the client.
-	READ_WAIT = 15 * time.Second
+	READ_WAIT = 20 * time.Second
 	// Send pings to client with this period. Must be less than READ_WAIT.
-	PING_PERIOD = (READ_WAIT * 9) / 10
+	PING_PERIOD = READ_WAIT / 2
 	// Maximum message size allowed from client.
 	// must be at least 4 * MAX_CHAT_MESSAGE_LENGTH (in script.js)
 	MAX_MESSAGE_SIZE = 1024
