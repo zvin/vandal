@@ -148,11 +148,7 @@ func (user *User) sender() chan<- *[]byte {
 		}()
 		for {
 			select {
-			case data, ok := <-ch:
-				if !ok {
-					write(user.Socket, websocket.OpClose, []byte{})
-					return
-				}
+			case data := <-ch:
 				if err := write(user.Socket, websocket.OpBinary, *data); err != nil {
 					user.Kick(err.Error())
 					return
