@@ -172,13 +172,14 @@ func (user *User) receiver() <-chan *[]interface{} {
 	// receives and decodes messages from users
 	ch := make(chan *[]interface{})
 	go func() {
+	    defer close(ch)
 		user.Socket.SetReadLimit(MAX_MESSAGE_SIZE)
 		user.Socket.SetReadDeadline(time.Now().Add(READ_WAIT))
 		for {
 			op, r, err := user.Socket.NextReader()
 			if err != nil {
 				user.Kick(err.Error())
-				break
+				return
 			}
 			switch op {
 			case websocket.OpPong:
@@ -187,21 +188,20 @@ func (user *User) receiver() <-chan *[]interface{} {
 				data, err := ioutil.ReadAll(r)
 				if err != nil {
 					user.Kick(err.Error())
-					break
+					return
 				}
 				var event []interface{}
 				err = codec.NewDecoderBytes(data, &msgpackHandle).Decode(&event)
 				if err != nil {
 					user.Kick(err.Error())
-					break
+					return
 				}
 				ch <- &event
 			default:
 				user.Kick(fmt.Sprintf("bad message type: %v", op))
-				break
+				return
 			}
 		}
-		close(ch)
 	}()
 	return ch
 }
