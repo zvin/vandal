@@ -9,7 +9,6 @@ var EventType = {
 	mouse_down      : 8,
 	chat_message    : 9,
 	change_nickname : 10,
-	error           : 11
 }
 
 function send_event(event){
@@ -94,7 +93,10 @@ function create_socket(){
         )
     )
     mySocket.onmessage = function(e){decode_msgpack(e.data)}
-    mySocket.onclose = function(){
+    mySocket.onclose = function(e){
+        if (e.reason != ""){
+            alert(e.reason)
+        }
         warning_box.style.display = "block"
     }
     canvas = create_element("canvas", {
@@ -171,9 +173,6 @@ function mouseup(ev){
 function gotmessage(event){
     var type = event.shift(),            // event_type
         user_id, user
-    if (type == EventType.error){
-        alert(event[0])
-    }
     if (type != EventType.welcome){
         user_id = event.shift()
         user = users[user_id]

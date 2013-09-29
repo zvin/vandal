@@ -125,7 +125,6 @@ func newLocation(url string) *Location {
 	loc.chatFileName = CHAT_DIR + "/" + b64fname + ".gob"
 	loc.Chat = OpenMessagesLog(loc.chatFileName)
 	loc.fileName = IMAGES_DIR + "/" + b64fname + ".png" // filename
-	Log.Printf("filename: %v", loc.fileName)
 	loc.surface = cairo.NewSurfaceFromPNG(loc.fileName)
 	if loc.surface.SurfaceStatus() != 0 {
 		loc.surface.Finish()
@@ -147,7 +146,7 @@ func (location *Location) main() {
 			if len(location.users) >= MAX_USERS_PER_LOCATION {
 				request.resultChan <- false
 			} else {
-				Log.Println("New user", request.user.UserId, "joins", TryQueryUnescape(location.Url))
+				Log.Println("User", request.user.UserId, "joins", TryQueryUnescape(location.Url))
 				request.resultChan <- true
 				location.addUser(request.user)
 			}
@@ -253,6 +252,7 @@ func (location *Location) removeUser(user *User) {
 	timestamp := Timestamp()
 	location.broadcast(user, &[]interface{}{EventTypeLeave, timestamp})
 	location.Chat.AddMessage(timestamp, "", "user "+user.Nickname+" left")
+	close(user.sendData)
 }
 
 func (location *Location) DrawLine(x1, y1, x2, y2, duration, red, green, blue int, use_pen bool) {
@@ -294,7 +294,7 @@ func (location *Location) save() {
 func (location *Location) UserGotEvent(user *User, event *[]interface{}) *[]interface{} {
 	event_type, err := ToInt((*event)[0])
 	if err != nil {
-		user.Error("Invalid event type")
+		user.Kick("Invalid event type")
 		return nil
 	}
 	params := (*event)[1:]
@@ -304,7 +304,7 @@ func (location *Location) UserGotEvent(user *User, event *[]interface{}) *[]inte
 		y, err1 := ToInt(params[1])
 		duration, err2 := ToInt(params[2])
 		if err0 != nil || err1 != nil || err2 != nil {
-			user.Error("Invalid mouse move")
+			user.Kick("Invalid mouse move")
 			return nil
 		}
 		if user.MouseIsDown {
@@ -324,7 +324,7 @@ func (location *Location) UserGotEvent(user *User, event *[]interface{}) *[]inte
 	case EventTypeChangeTool:
 		p, err := ToInt(params[0])
 		if err != nil {
-			user.Error("Invalid tool")
+			user.Kick("Invalid tool")
 			return nil
 		}
 		user.changeTool(p != 0)
@@ -333,18 +333,18 @@ func (location *Location) UserGotEvent(user *User, event *[]interface{}) *[]inte
 		p1, err1 := ToInt(params[1])
 		p2, err2 := ToInt(params[2])
 		if err0 != nil || err1 != nil || err2 != nil {
-			user.Error("Invalid color")
+			user.Kick("Invalid color")
 			return nil
 		}
 		user.changeColor(p0, p1, p2)
 	case EventTypeChangeNickname:
 		nickname, err := ToString(params[0])
 		if err != nil {
-			user.Error("Invalid nickname")
+			user.Kick("Invalid nickname")
 			return nil
 		}
 		if utf8.RuneCountInString(nickname) > MAX_NICKNAME_LENGTH {
-			user.Error("Nickname too long")
+			user.Kick("Nickname too long")
 			return nil
 		}
 		timestamp := Timestamp()
@@ -354,7 +354,7 @@ func (location *Location) UserGotEvent(user *User, event *[]interface{}) *[]inte
 	case EventTypeChatMessage:
 		msg, err := ToString(params[0])
 		if err != nil {
-			user.Error("Invalid chat message")
+			user.Kick("Invalid chat message")
 			return nil
 		}
 		timestamp := Timestamp()

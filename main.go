@@ -42,19 +42,30 @@ func socket_handler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", 405)
 		return
 	}
+
 	ws, err := websocket.Upgrade(w, r.Header, nil, 1024, 1024)
 	if err != nil {
 		Log.Println(err)
 		return
 	}
-	defer ws.Close()
 
-	user := NewUser(ws)
+	user := NewUser()
+	Log.Printf("New user %v (%v) - (%v)\n", user.UserId, ws.RemoteAddr(), r.UserAgent())
+	close_msg := ""
+	defer func() {
+		ws.WriteControl(
+			websocket.OpClose,
+			websocket.FormatCloseMessage(websocket.CloseNormalClosure, close_msg),
+			time.Now().Add(WRITE_WAIT),
+		)
+		ws.Close()
+		Log.Printf("User %v left (%v)\n", user.UserId, close_msg)
+	}()
 
 	// Retrieve the site the user wants to draw over:
 	location_url, err := url.QueryUnescape(r.RequestURI[6:]) // skip "/ws?u="
 	if err != nil {
-		Log.Printf("Invalid query: %v", err)
+		close_msg = fmt.Sprintf("Invalid query: %v", err)
 		return
 	}
 
@@ -62,14 +73,19 @@ func socket_handler(w http.ResponseWriter, r *http.Request) {
 	request := &JoinRequest{user, make(chan bool)}
 	location.Join <- request
 	user_joined := <-request.resultChan
-	if user_joined {
-		user.SocketHandler(location)
-	} else {
-		go func() { // user.Error will block if no SocketHandler is alive
-			user.Error("Too much users at this location, try adding #something at the end of the URL.")
-		}()
-		user.SocketHandler(nil)
+
+	if !user_joined {
+		close_msg = fmt.Sprintf(
+			"Too much users at %v, try adding #something at the end of the URL.",
+			location_url,
+		)
+		return
 	}
+
+	go user.Sender(ws)
+	go user.Receiver(location, ws)
+	close_msg = <-user.kick
+	location.Quit <- user
 }
 
 func signal_handler(c chan os.Signal) {

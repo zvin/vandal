@@ -30,9 +30,7 @@ var (
 )
 
 type User struct {
-	Socket      *websocket.Conn
-	sendData    chan<- *[]byte
-	recv        <-chan *[]interface{}
+	sendData    chan *[]byte
 	UserId      int
 	Nickname    string
 	MouseIsDown bool
@@ -45,14 +43,12 @@ type User struct {
 	kick        chan string
 }
 
-func NewUser(ws *websocket.Conn) *User {
+func NewUser() *User {
 	user := new(User)
-	user.Socket = ws
 	user.UserId = <-userIdGenerator
 	user.Nickname = strconv.Itoa(user.UserId)
 	user.UsePen = true
-	user.sendData = user.sender()
-	user.recv = user.receiver()
+	user.sendData = make(chan *[]byte, SEND_CHANNEL_SIZE)
 	user.kick = make(chan string)
 	return user
 }
@@ -85,11 +81,6 @@ func (user *User) Kick(description string) {
 	}
 }
 
-func (user *User) Error(description string) {
-	user.SendEvent(&[]interface{}{EventTypeError, description})
-	user.Kick(description)
-}
-
 func (user *User) SendEvent(event *[]interface{}) {
 	data, err := encodeEvent(event)
 	if err != nil {
@@ -102,7 +93,6 @@ func (user *User) SendData(data *[]byte) {
 	select {
 	case user.sendData <- data:
 	default:
-		Log.Printf("Buffer full for user %v: kicking.\n", user.UserId)
 		user.Kick("Buffer full")
 	}
 }
@@ -139,8 +129,7 @@ func write(ws *websocket.Conn, opCode int, payload []byte) error {
 	return ws.WriteMessage(opCode, payload)
 }
 
-func (user *User) sender() chan<- *[]byte {
-	ch := make(chan *[]byte, SEND_CHANNEL_SIZE)
+func (user *User) Sender(ws *websocket.Conn) {
 	go func() {
 		ticker := time.NewTicker(PING_PERIOD)
 		defer func() {
@@ -148,38 +137,40 @@ func (user *User) sender() chan<- *[]byte {
 		}()
 		for {
 			select {
-			case data := <-ch:
-				if err := write(user.Socket, websocket.OpBinary, *data); err != nil {
+			case data, open := <-user.sendData:
+				if !open {
+					// channel is closed: user left
+					return
+				}
+				if err := write(ws, websocket.OpBinary, *data); err != nil {
 					user.Kick(err.Error())
 					return
 				}
 			case <-ticker.C:
-				if err := write(user.Socket, websocket.OpPing, []byte{}); err != nil {
+				if err := write(ws, websocket.OpPing, []byte{}); err != nil {
 					user.Kick(err.Error())
 					return
 				}
 			}
+
 		}
 	}()
-	return ch
 }
 
-func (user *User) receiver() <-chan *[]interface{} {
+func (user *User) Receiver(location *Location, ws *websocket.Conn) {
 	// receives and decodes messages from users
-	ch := make(chan *[]interface{})
 	go func() {
-	    defer close(ch)
-		user.Socket.SetReadLimit(MAX_MESSAGE_SIZE)
-		user.Socket.SetReadDeadline(time.Now().Add(READ_WAIT))
+		ws.SetReadLimit(MAX_MESSAGE_SIZE)
+		ws.SetReadDeadline(time.Now().Add(READ_WAIT))
 		for {
-			op, r, err := user.Socket.NextReader()
+			op, r, err := ws.NextReader()
 			if err != nil {
 				user.Kick(err.Error())
 				return
 			}
 			switch op {
 			case websocket.OpPong:
-				user.Socket.SetReadDeadline(time.Now().Add(READ_WAIT))
+				ws.SetReadDeadline(time.Now().Add(READ_WAIT))
 			case websocket.OpBinary:
 				data, err := ioutil.ReadAll(r)
 				if err != nil {
@@ -192,35 +183,11 @@ func (user *User) receiver() <-chan *[]interface{} {
 					user.Kick(err.Error())
 					return
 				}
-				ch <- &event
+				location.Message <- &UserAndEvent{user, &event}
 			default:
 				user.Kick(fmt.Sprintf("bad message type: %v", op))
 				return
 			}
 		}
 	}()
-	return ch
-}
-
-func (user *User) SocketHandler(location *Location) {
-	defer func() {
-		if location != nil {
-			location.Quit <- user
-			Log.Printf("user %v left\n", user.UserId)
-		}
-	}()
-	for {
-		select {
-		case event, ok := <-user.recv:
-			if !ok {
-				return
-			}
-			if location != nil {
-				location.Message <- &UserAndEvent{user, event}
-			}
-		case err_msg := <-user.kick:
-			Log.Printf("user %v kicked for '%v'\n", user.UserId, err_msg)
-			return
-		}
-	}
 }
