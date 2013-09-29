@@ -136,20 +136,25 @@ function create_canvas(){
 //    window.setInterval(mask_redraw, 30)
 }
 
-function wheel(event){
-    if (event.altKey){
-        var delta = (event.wheelDeltaY || -event.deltaY)
-        if ((delta > 0) && (zoom < ZOOM_MAX)){
-            zoom *= 1.1
-        } else if ((delta < 0) && (zoom > ZOOM_MIN)){
-            zoom /= 1.1
-        }
+function set_zoom(){
         var zoom_str = zoom.toFixed(2)
         if (frame_div.style.transform === undefined) {
             frame_div.style.webkitTransform = "scale(" + zoom_str + ")"
         } else {
             frame_div.style.transform = "scale(" + zoom_str + ")"
         }
+}
+
+function wheel(event){
+    if (event.altKey){
+        var delta = (event.wheelDeltaY || -event.deltaY)
+        if ((delta > 0) && (zoom < ZOOM_MAX)){
+            zoom *= ZOOM_FACTOR
+        } else if ((delta < 0) && (zoom > ZOOM_MIN)){
+            zoom /= ZOOM_FACTOR
+        }
+        zoom_slider.value = logn(zoom, ZOOM_FACTOR)
+        set_zoom()
         event.preventDefault()
         return false
     }

@@ -10,6 +10,7 @@ var DOMAIN                  = "DOMAIN_PLACEHOLDER",
     MAX_CHAT_MESSAGE_LENGTH = 256,
     ZOOM_MIN                = 1,
     ZOOM_MAX                = 10,
+    ZOOM_FACTOR             = 1.1,
     this_script             = document.documentElement.lastChild,
     users                   = new Object(),
     mask_lines              = new Array(),
@@ -24,11 +25,15 @@ var DOMAIN                  = "DOMAIN_PLACEHOLDER",
     is_decoding             = false,
     chat_div, myPicker, nickname_span, canvas, messages_div, mySocket,
     mask_canvas, ctx, mask_ctx, biggest_node, last_time, loading_box,
-    progress_bar, warning_box, frame_div, frame, error_message_div
+    progress_bar, warning_box, frame_div, frame, error_message_div, zoom_slider
 
 
 function distance(x1, y1, x2, y2){
     return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2))
+}
+
+function logn(i, base){
+    return Math.log(i) / Math.log(base)
 }
 
 function time_since_last_time(){
