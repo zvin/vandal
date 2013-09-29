@@ -139,9 +139,9 @@ function create_canvas(){
 function wheel(event){
     if (event.altKey){
         var delta = (event.wheelDeltaY || -event.deltaY)
-        if ((delta > 0) && (zoom < 10.0)){
+        if ((delta > 0) && (zoom < ZOOM_MAX)){
             zoom *= 1.1
-        } else if ((delta < 0) && (zoom > 0.5)){
+        } else if ((delta < 0) && (zoom > ZOOM_MIN)){
             zoom /= 1.1
         }
         var zoom_str = zoom.toFixed(2)
