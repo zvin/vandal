@@ -175,9 +175,9 @@ function create_warning_box(){
         "top"             : "50%",
         "left"            : "50%",
         "margin-left"     : "-150px",
-        "margin-top"      : "-25px",
+        "margin-top"      : "-55px",
         "width"           : "300px",
-        "height"          : "50px",
+        "height"          : "110px",
         "border"          : "6px solid red",
         "background-color": "white",
         "color"           : "red",
@@ -193,7 +193,48 @@ function create_warning_box(){
         "z-index"         :  5
     })
     warning_box.appendChild(document.createTextNode("Disconnected"))
+    error_message_div = create_element("div", {
+        "color"           : "black",
+        "font-size"       : "12px",
+        "line-height"     : "15px",
+        "border"          : "2px dotted red",
+        "margin-bottom"   : "10px"
+    })
+    warning_box.appendChild(error_message_div)
+    var buttons_div = create_element("div", {
+        "color"           : "black",
+        "font-size"       : "12px",
+        "line-height"     : "15px",
+    })
+    var reconnect_button = create_element("span", {
+        "border"          : "1px solid gray",
+        "margin-right"    : "10px",
+        "padding"         : "3px"
+    })
+    reconnect_button.appendChild(document.createTextNode("reconnect"))
+    reconnect_button.onclick = function(){
+        set_error_message("")
+        warning_box.style.display = "none"
+        create_socket()
+    }
+    buttons_div.appendChild(reconnect_button)
+    var close_button = create_element("span", {
+        "border"          : "1px solid gray",
+        "margin-left"     : "10px",
+        "padding"         : "3px"
+    })
+    close_button.appendChild(document.createTextNode("close"))
+    close_button.onclick = destroy
+    buttons_div.appendChild(close_button)
+    warning_box.appendChild(buttons_div)
     document.body.appendChild(warning_box)
+}
+
+function set_error_message(msg){
+    while (error_message_div.childNodes.length){
+        error_message_div.removeChild(error_message_div.firstChild)
+    }
+    error_message_div.appendChild(document.createTextNode(msg))
 }
 
 function set_loading_on(){

@@ -94,11 +94,12 @@ function create_socket(){
     )
     mySocket.onmessage = function(e){decode_msgpack(e.data)}
     mySocket.onclose = function(e){
-        if (e.reason != ""){
-            alert(e.reason)
-        }
+        set_error_message(e.reason)
         warning_box.style.display = "block"
     }
+}
+
+function create_canvas(){
     canvas = create_element("canvas", {
         "position"     : "absolute",
         "left"         : 0,

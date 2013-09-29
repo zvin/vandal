@@ -21,7 +21,7 @@ var DOMAIN                  = "DOMAIN_PLACEHOLDER",
     is_decoding             = false,
     chat_div, myPicker, nickname_span, canvas, messages_div, mySocket,
     mask_canvas, ctx, mask_ctx, biggest_node, last_time, loading_box,
-    progress_bar, warning_box, frame_div, frame
+    progress_bar, warning_box, frame_div, frame, error_message_div
 
 
 function distance(x1, y1, x2, y2){
@@ -65,4 +65,5 @@ this.destroy = destroy
     create_warning_box()
     set_loading_on()
     create_socket()
+    create_canvas()
 //}
