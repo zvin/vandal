@@ -18,6 +18,7 @@ var DOMAIN                  = "DOMAIN_PLACEHOLDER",
     chat_was_visible        = null,
     max_size                = 0,
     incoming_blobs          = [],
+    zoom                    = 1.0,
     is_decoding             = false,
     chat_div, myPicker, nickname_span, canvas, messages_div, mySocket,
     mask_canvas, ctx, mask_ctx, biggest_node, last_time, loading_box,
@@ -66,4 +67,5 @@ this.destroy = destroy
     set_loading_on()
     create_socket()
     create_canvas()
+
 //}

@@ -471,7 +471,9 @@ function wrap_document_in_iframe(){
     frame_div = create_element("div", {
         "position": "relative",
         "width"   : WIDTH + "px",
-        "margin"  : "auto"
+        "margin"  : "auto",
+        "transform-origin": "0 0",
+        "-webkit-transform-origin": "0 0"
     })
     function create_frame(){
         return create_element("iframe", {

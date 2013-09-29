@@ -126,7 +126,33 @@ function create_canvas(){
     mask_canvas.onmouseup   = mouseup
     mask_canvas.onmousemove = mousemove
     mask_canvas.onmouseout  = mouseup
+    if (document.body.onwheel === undefined) {
+        // chrome
+        document.body.onmousewheel = wheel
+    } else {
+        // firefox
+        document.body.onwheel = wheel
+    }
 //    window.setInterval(mask_redraw, 30)
+}
+
+function wheel(event){
+    if (event.altKey){
+        var delta = (event.wheelDeltaY || -event.deltaY)
+        if ((delta > 0) && (zoom < 10.0)){
+            zoom *= 1.1
+        } else if ((delta < 0) && (zoom > 0.5)){
+            zoom /= 1.1
+        }
+        var zoom_str = zoom.toFixed(2)
+        if (frame_div.style.transform === undefined) {
+            frame_div.style.webkitTransform = "scale(" + zoom_str + ")"
+        } else {
+            frame_div.style.transform = "scale(" + zoom_str + ")"
+        }
+        event.preventDefault()
+        return false
+    }
 }
 
 function mousemove(ev){
