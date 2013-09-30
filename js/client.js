@@ -137,12 +137,17 @@ function create_canvas(){
 }
 
 function set_zoom(){
+        var center_x = (window.scrollX + (window.innerWidth / 2)) / document.body.scrollWidth
+        var center_y = (window.scrollY + (window.innerHeight / 2)) / document.body.scrollHeight
         var zoom_str = zoom.toFixed(2)
         if (frame_div.style.transform === undefined) {
             frame_div.style.webkitTransform = "scale(" + zoom_str + ")"
         } else {
             frame_div.style.transform = "scale(" + zoom_str + ")"
         }
+        var new_scrollx = document.body.scrollWidth * center_x - (window.innerWidth / 2)
+        var new_scrolly = document.body.scrollHeight * center_y - (window.innerHeight / 2)
+        window.scrollTo(new_scrollx, new_scrolly)
 }
 
 function wheel(event){
