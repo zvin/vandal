@@ -250,7 +250,7 @@ function create_warning_box(){
     var buttons_div = create_element("div", {
         "color"           : "black",
         "font-size"       : "12px",
-        "line-height"     : "15px",
+        "line-height"     : "15px"
     })
     var reconnect_button = create_element("span", {
         "border"          : "1px solid gray",

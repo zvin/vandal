@@ -8,7 +8,7 @@ var EventType = {
 	mouse_up        : 7,
 	mouse_down      : 8,
 	chat_message    : 9,
-	change_nickname : 10,
+	change_nickname : 10
 }
 
 function send_event(event){
