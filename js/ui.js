@@ -121,6 +121,10 @@ function create_toolbar(){
         "width"     : "130px",
         "margin-top": "15px"
     })
+    if (document.compatMode == "BackCompat"){
+        zoom_min_img.style.marginLeft = "-41px"
+        zoom_slider.style.width = "125px"
+    }
     zoom_slider.type = "range"
     zoom_slider.min = 0
     zoom_slider.max = logn(ZOOM_MAX, ZOOM_FACTOR)
