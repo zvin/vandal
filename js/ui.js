@@ -38,7 +38,7 @@ function create_toolbar(){
         "top"             : "0px",
         "left"            : "0px",
         "width"           : "269px",
-        "height"          : "100px",
+        "height"          : "75px",
         "border"          : "2px solid #000000",
         "background-color": "#FFFFFF",
         "border-radius"   : "5px 0px 0px 5px",
@@ -98,32 +98,37 @@ function create_toolbar(){
     // end toggle_chat
     // handle
     handle.style.width = "14px"
-    handle.style.height = "100px"
+    handle.style.height = "75px"
     handle.style.cssFloat = "right"
     handle.style.background = "url(http://" + DOMAIN + ":" + HTTP_PORT + "/static/handle.png) repeat scroll 0 0 transparent"
     // end handle
 
     // zoom slider
     var zoom_min_img = create_element("div", {
-        "width"     : "50px",
-        "height"    : "50px",
+        "width"     : "25px",
+        "height"    : "25px",
+        "margin-left": "5px",
+        "margin-top": "-5px",
         "float"     : "left",
         "background": "url(http://" + DOMAIN + ":" + HTTP_PORT + "/static/zoom_min.png) no-repeat scroll 6px 6px transparent"
     })
     var zoom_max_img = create_element("div", {
-        "width"     : "50px",
-        "height"    : "50px",
+        "width"     : "25px",
+        "height"    : "25px",
+        "margin-right": "15px",
+        "margin-top": "-5px",
         "float"     : "right",
         "background": "url(http://" + DOMAIN + ":" + HTTP_PORT + "/static/zoom_max.png) no-repeat scroll 6px 6px transparent"
     })
     zoom_slider = create_element("input", {
         "float"     : "left",
-        "width"     : "130px",
-        "margin-top": "15px"
+        "width"     : "162px"
     })
     if (document.compatMode == "BackCompat"){
-        zoom_min_img.style.marginLeft = "-41px"
-        zoom_slider.style.width = "125px"
+        zoom_min_img.style.marginLeft = "-240px"
+        zoom_min_img.style.marginTop = "45px"
+        zoom_slider.style.marginLeft = "-10px"
+        zoom_slider.style.width = "164px"
     }
     zoom_slider.type = "range"
     zoom_slider.min = 0
