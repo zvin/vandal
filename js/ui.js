@@ -124,6 +124,10 @@ function create_toolbar(){
         "float"     : "left",
         "width"     : "162px"
     })
+    var zoom_msg = "Use Alt + mousewheel to zoom in and out"
+    zoom_max_img.title = zoom_msg
+    zoom_min_img.title = zoom_msg
+    zoom_slider.title = zoom_msg
     if (document.compatMode == "BackCompat"){
         zoom_min_img.style.marginLeft = "-240px"
         zoom_min_img.style.marginTop = "45px"
