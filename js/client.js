@@ -151,7 +151,7 @@ function set_zoom(){
 }
 
 function wheel(event){
-    if (event.altKey){
+    if (event.altKey || event.ctrlKey){
         var delta = (event.wheelDeltaY || -event.deltaY)
         if ((delta > 0) && (zoom < ZOOM_MAX)){
             zoom *= ZOOM_FACTOR
