@@ -512,8 +512,12 @@ function unwrap_document_from_iframe(){
 
 function wrap_document_in_iframe(){
     var height = Math.max(document.documentElement.scrollHeight, HEIGHT)
-    var html = document.documentElement.innerHTML
-    document.documentElement.innerHTML = ""
+    var doctype = document.doctype
+    var documentElement = document.documentElement.cloneNode(true)  // clone page
+    documentElement.removeChild(documentElement.lastChild)  // remove this script
+    var doc = document.createElement('html')
+    doc.appendChild(document.createElement('body'))
+    document.replaceChild(doc, document.documentElement)  // replace this page with a new one
     frame_div = create_element("div", {
         "position": "relative",
         "width"   : WIDTH + "px",
@@ -531,45 +535,11 @@ function wrap_document_in_iframe(){
     }
     frame = create_frame()
     frame.onload = function(){
-        // copy window content into iframe
-        for (var key in window){
-            if (window.hasOwnProperty(key)){
-                try{
-                    frame.contentWindow[key] = window[key]
-                }catch(err){
-                }
-            }
+        frame.contentWindow.document.replaceChild(documentElement, frame.contentWindow.document.documentElement)
+        if (doctype){
+            frame.contentWindow.document.insertBefore(doctype, frame.contentWindow.document.documentElement)
         }
-        frame.onload = function(){
-            var frame_document = undefined
-            try{
-                frame_document = frame.contentWindow.document
-            }catch(err){
-            }
-            if (frame_document == undefined) {
-                // X-Frame-Options is probably set to 'DENY':
-                // the window content was not copied, try another method:
-                // recreate the frame and copy innerHTML
-                frame_div.removeChild(frame)
-                frame = create_frame()
-                frame_div.appendChild(frame)
-                // remove this script from html
-                html = html.substring(0, html.lastIndexOf("<script "))
-                // setTimeout is needed in firefox
-                setTimeout(
-                    function(){
-                        // copy innerHTML
-                        frame.contentWindow.document.documentElement.innerHTML = html
-                    },
-                    0
-                )
-                // put embeds down when loaded
-                frame.onload = put_embeds_down
-            } else {
-                // content successfully copied into the frame
-                put_embeds_down()
-            }
-        }
+        put_embeds_down()
     }
     frame_div.appendChild(frame)
     document.body.appendChild(frame_div)
