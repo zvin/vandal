@@ -135,8 +135,8 @@ function create_toolbar(){
         zoom_slider.style.width = "164px"
     }
     zoom_slider.type = "range"
-    zoom_slider.min = 0
-    zoom_slider.max = logn(ZOOM_MAX, ZOOM_FACTOR)
+    zoom_slider.min = logn(ZOOM_MIN, ZOOM_FACTOR).toFixed(1)
+    zoom_slider.max = logn(ZOOM_MAX, ZOOM_FACTOR).toFixed(1)
     zoom_slider.value = 0
     zoom_slider.step = 0.1
     zoom_slider.oninput = function(e){

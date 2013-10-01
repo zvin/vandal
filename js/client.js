@@ -139,7 +139,7 @@ function create_canvas(){
 function set_zoom(){
         var center_x = (window.scrollX + (window.innerWidth / 2)) / document.body.scrollWidth
         var center_y = (window.scrollY + (window.innerHeight / 2)) / document.body.scrollHeight
-        var zoom_str = zoom.toFixed(2)
+        var zoom_str = zoom.toFixed(1)
         if (frame_div.style.transform === undefined) {
             frame_div.style.webkitTransform = "scale(" + zoom_str + ")"
         } else {
