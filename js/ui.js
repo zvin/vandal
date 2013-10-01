@@ -507,7 +507,10 @@ function put_embeds_down(){
 
 
 function unwrap_document_from_iframe(){
-    document.documentElement.innerHTML = frame.contentWindow.document.documentElement.innerHTML
+    document.replaceChild(
+        frame.contentWindow.document.documentElement,
+        document.documentElement
+    )
 }
 
 function wrap_document_in_iframe(){
