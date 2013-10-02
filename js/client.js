@@ -136,17 +136,23 @@ function create_canvas(){
 //    window.setInterval(mask_redraw, 30)
 }
 
-function set_zoom(){
-        var center_x = (window.scrollX + (window.innerWidth / 2)) / document.body.scrollWidth
-        var center_y = (window.scrollY + (window.innerHeight / 2)) / document.body.scrollHeight
+function set_zoom(target_x, target_y){
+        if (target_x === undefined){
+            target_x = window.innerWidth / 2
+        }
+        if (target_y === undefined){
+            target_y = window.innerHeight / 2
+        }
+        var center_x = (window.scrollX + target_x) / document.body.scrollWidth
+        var center_y = (window.scrollY + target_y) / document.body.scrollHeight
         var zoom_str = zoom.toFixed(1)
         if (frame_div.style.transform === undefined) {
             frame_div.style.webkitTransform = "scale(" + zoom_str + ")"
         } else {
             frame_div.style.transform = "scale(" + zoom_str + ")"
         }
-        var new_scrollx = document.body.scrollWidth * center_x - (window.innerWidth / 2)
-        var new_scrolly = document.body.scrollHeight * center_y - (window.innerHeight / 2)
+        var new_scrollx = document.body.scrollWidth * center_x - target_x
+        var new_scrolly = document.body.scrollHeight * center_y - target_y
         window.scrollTo(new_scrollx, new_scrolly)
 }
 
@@ -159,7 +165,7 @@ function wheel(event){
             zoom /= ZOOM_FACTOR
         }
         zoom_slider.value = logn(zoom, ZOOM_FACTOR)
-        set_zoom()
+        set_zoom(event.clientX, event.clientY)
         event.preventDefault()
         return false
     }
