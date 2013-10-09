@@ -261,6 +261,8 @@ function create_warning_box(){
     reconnect_button.appendChild(document.createTextNode("reconnect"))
     reconnect_button.onclick = function(){
         remove_all_users()
+        nickname_span.innerHTML = ""
+        messages_div.innerHTML = ""
         ctx.clearRect(0, 0, canvas.width, canvas.height)
         mask_ctx.clearRect(0, 0, canvas.width, canvas.height)
         mask_lines = new Array()
