@@ -50,14 +50,19 @@ function time_since_last_time(){
     return duration
 }
 
-function destroy(){
-    mySocket.close()
+function remove_all_users(){
     for (var user_id in users) {
         // use hasOwnProperty to filter out keys from the Object.prototype
         if (users.hasOwnProperty(user_id)) {
             users[user_id].destroy()
+            delete users[user_id]
         }
     }
+}
+
+function destroy(){
+    mySocket.close()
+    remove_all_users()
     unwrap_document_from_iframe()
     delete window.webinvader_pad
 }

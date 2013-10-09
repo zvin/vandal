@@ -255,10 +255,15 @@ function create_warning_box(){
     var reconnect_button = create_element("span", {
         "border"          : "1px solid gray",
         "margin-right"    : "10px",
-        "padding"         : "3px"
+        "padding"         : "3px",
+        "cursor"          : "pointer"
     })
     reconnect_button.appendChild(document.createTextNode("reconnect"))
     reconnect_button.onclick = function(){
+        remove_all_users()
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        mask_ctx.clearRect(0, 0, canvas.width, canvas.height)
+        mask_lines = new Array()
         set_error_message("")
         warning_box.style.display = "none"
         create_socket()
@@ -267,7 +272,8 @@ function create_warning_box(){
     var close_button = create_element("span", {
         "border"          : "1px solid gray",
         "margin-left"     : "10px",
-        "padding"         : "3px"
+        "padding"         : "3px",
+        "cursor"          : "pointer"
     })
     close_button.appendChild(document.createTextNode("close"))
     close_button.onclick = destroy
