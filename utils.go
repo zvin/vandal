@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"encoding/base64"
 	"errors"
+	"fmt"
+	"io/ioutil"
 	"math"
 	"net/url"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -98,4 +101,20 @@ func TryQueryUnescape(s string) string {
 		label = s
 	}
 	return label
+}
+
+func ReadIntFromFile(filename string) int {
+	content, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return 1
+	}
+	value, err := strconv.Atoi(string(content))
+	if err != nil {
+		return 1
+	}
+	return value
+}
+
+func WriteIntToFile(value int, filename string) {
+	ioutil.WriteFile(filename, []byte(fmt.Sprintf("%d", value)), 0600)
 }

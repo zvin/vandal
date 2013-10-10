@@ -21,7 +21,8 @@ const (
 	PING_PERIOD = READ_WAIT / 2
 	// Maximum message size allowed from client.
 	// must be at least 4 * MAX_CHAT_MESSAGE_LENGTH (in script.js)
-	MAX_MESSAGE_SIZE = 1024
+	MAX_MESSAGE_SIZE      = 1024
+	LAST_USER_ID_FILENAME = "last_user_id"
 )
 
 var (
@@ -56,7 +57,7 @@ func NewUser() *User {
 func init() {
 	userIdGenerator = make(chan int)
 	go func() {
-		i := 1
+		i := ReadIntFromFile(LAST_USER_ID_FILENAME)
 		for {
 			userIdGenerator <- i
 			i += 1
