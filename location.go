@@ -292,6 +292,10 @@ func (location *Location) save() {
 }
 
 func (location *Location) UserGotEvent(user *User, event *[]interface{}) *[]interface{} {
+	if len(*event) < 1 {
+		user.Kick("Invalid event")
+		return nil
+	}
 	event_type, err := ToInt((*event)[0])
 	if err != nil {
 		user.Kick("Invalid event type")
@@ -300,6 +304,10 @@ func (location *Location) UserGotEvent(user *User, event *[]interface{}) *[]inte
 	params := (*event)[1:]
 	switch event_type {
 	case EventTypeMouseMove:
+		if len(params) != 3 {
+			user.Kick("Invalid mouse move: wrong number of parameters")
+			return nil
+		}
 		x, err0 := ToInt(params[0])
 		y, err1 := ToInt(params[1])
 		duration, err2 := ToInt(params[2])
@@ -318,10 +326,22 @@ func (location *Location) UserGotEvent(user *User, event *[]interface{}) *[]inte
 		}
 		user.mouseMove(x, y, duration)
 	case EventTypeMouseUp:
+		if len(params) != 0 {
+			user.Kick("Invalid mouse up event")
+			return nil
+		}
 		user.mouseUp()
 	case EventTypeMouseDown:
+		if len(params) != 0 {
+			user.Kick("Invalid mouse down event")
+			return nil
+		}
 		user.mouseDown()
 	case EventTypeChangeTool:
+		if len(params) != 1 {
+			user.Kick("Invalid change tool event: wrong number of parameters")
+			return nil
+		}
 		p, err := ToInt(params[0])
 		if err != nil {
 			user.Kick("Invalid tool")
@@ -329,6 +349,10 @@ func (location *Location) UserGotEvent(user *User, event *[]interface{}) *[]inte
 		}
 		user.changeTool(p != 0)
 	case EventTypeChangeColor:
+		if len(params) != 3 {
+			user.Kick("Invalid change color event: wrong number of parameters")
+			return nil
+		}
 		p0, err0 := ToInt(params[0])
 		p1, err1 := ToInt(params[1])
 		p2, err2 := ToInt(params[2])
@@ -338,6 +362,10 @@ func (location *Location) UserGotEvent(user *User, event *[]interface{}) *[]inte
 		}
 		user.changeColor(p0, p1, p2)
 	case EventTypeChangeNickname:
+		if len(params) != 1 {
+			user.Kick("Invalid change nick event: wrong number of parameters")
+			return nil
+		}
 		nickname, err := ToString(params[0])
 		if err != nil {
 			user.Kick("Invalid nickname")
@@ -352,6 +380,10 @@ func (location *Location) UserGotEvent(user *User, event *[]interface{}) *[]inte
 		user.changeNickname(nickname)
 		*event = append(*event, timestamp)
 	case EventTypeChatMessage:
+		if len(params) != 1 {
+			user.Kick("Invalid chat msg event: wrong number of parameters")
+			return nil
+		}
 		msg, err := ToString(params[0])
 		if err != nil {
 			user.Kick("Invalid chat message")
