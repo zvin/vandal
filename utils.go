@@ -108,7 +108,7 @@ func ReadIntFromFile(filename string) int {
 	if err != nil {
 		return 1
 	}
-	value, err := strconv.Atoi(string(content))
+	value, err := strconv.Atoi(strings.Trim(string(content), "\n"))
 	if err != nil {
 		return 1
 	}
