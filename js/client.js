@@ -61,29 +61,7 @@ function send_chat_message(msg){
 }
 
 function decode_msgpack(data){
-    // Reading a blob is an async operation but we want to keep the messages in
-    // order, so we have a queue of incoming messages and we decode them one at
-    // a time.
-    function decode(){
-        is_decoding = true
-        var reader = new FileReader()
-        reader.onloadend = function(evt) {
-            if (evt.target.readyState == FileReader.DONE) {
-                var bytes = new Uint8Array(evt.target.result)
-                gotmessage(msgpack.unpack(bytes))
-                if (incoming_blobs.length > 0){
-                    decode()
-                } else {
-                    is_decoding = false
-                }
-            }
-        }
-        reader.readAsArrayBuffer(incoming_blobs.shift());
-    }
-    incoming_blobs.push(data)
-    if (!is_decoding){
-        decode()
-    }
+    gotmessage(msgpack.unpack(new Uint8Array(data)))
 }
 
 function create_socket(){
@@ -92,6 +70,7 @@ function create_socket(){
             document.location.href
         )
     )
+    mySocket.binaryType = "arraybuffer"
     mySocket.onmessage = function(e){decode_msgpack(e.data)}
     mySocket.onclose = function(e){
         set_error_message(e.reason)
