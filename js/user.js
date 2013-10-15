@@ -15,8 +15,11 @@ function User(user_id, position, color, mouse_is_down, it_is_me, nickname, use_p
 
 User.prototype.reposition_label = function(){
     if (this.it_is_me) return
-    this.label.style.left = (canvas.offsetLeft + this.position[0] - CROSSHAIR_HALF_SIZE) + "px"
-    this.label.style.top = (this.position[1] - CROSSHAIR_HALF_SIZE) + "px"
+    if (this.label.style.transform === undefined){
+        this.label.style.webkitTransform = "translate(" + (this.position[0] - CROSSHAIR_HALF_SIZE) + "px, " + (this.position[1] - CROSSHAIR_HALF_SIZE) + "px)"
+    }else{
+        this.label.style.transform = "translate(" + (this.position[0] - CROSSHAIR_HALF_SIZE) + "px, " + (this.position[1] - CROSSHAIR_HALF_SIZE) + "px)"
+    }
 }
 
 User.prototype.create_label = function(){
@@ -27,6 +30,8 @@ User.prototype.create_label = function(){
         this.label = create_element("div")
         this.label.appendChild(text)
         this.label.style.position = "absolute"
+        this.label.style.left = 0
+        this.label.style.top = 0
         this.label.style.paddingLeft = "16px"
         this.label.style.zIndex = 1
         this.label.style.background = "url(http://" + DOMAIN + ":" + HTTP_PORT + "/static/crosshair.png) no-repeat"
