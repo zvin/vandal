@@ -69,8 +69,10 @@ function destroy(){
 }
 this.destroy = destroy
 
+var requestAnimFrame = window.requestAnimationFrame || window.webkitRequestAnimationFrame
+
 function render_loop(){
-    requestAnimationFrame(render_loop)
+    requestAnimFrame(render_loop)
     for (var user_id in users) {
         // use hasOwnProperty to filter out keys from the Object.prototype
         if (users.hasOwnProperty(user_id)) {
