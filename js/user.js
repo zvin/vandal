@@ -50,20 +50,19 @@ User.prototype.mouse_down = function(){
 
 User.prototype.mouse_move = function(x, y, duration){
     if (this.mouse_is_down){
-        draw_line(
+        lines_to_draw.push([
             this.position[0], this.position[1],          // origin
             x, y,                                        // destination
             duration,                                    // duration
             this.color[0], this.color[1], this.color[2], // color
             this.use_pen,                                // pen or eraser
             ctx                                          // context
-        )
+        ])
         if (this.use_pen && this.it_is_me){
             mask_shift()
         }
     }
     this.position = [x, y]
-    this.reposition_label()
 }
 
 User.prototype.change_color = function(red, green, blue){

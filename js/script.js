@@ -14,6 +14,7 @@ var DOMAIN                  = "DOMAIN_PLACEHOLDER",
     this_script             = document.documentElement.lastChild,
     users                   = new Object(),
     mask_lines              = new Array(),
+    lines_to_draw           = new Array(),
     my_last_x               = null,
     my_last_y               = null,
     my_use_pen              = 1,
@@ -67,6 +68,20 @@ function destroy(){
     delete window.webinvader_pad
 }
 this.destroy = destroy
+
+function render_loop(){
+    requestAnimationFrame(render_loop)
+    for (var user_id in users) {
+        // use hasOwnProperty to filter out keys from the Object.prototype
+        if (users.hasOwnProperty(user_id)) {
+            users[user_id].reposition_label()
+        }
+    }
+    while(lines_to_draw.length > 0){
+        draw_line.apply(this, lines_to_draw.shift())
+    }
+}
+render_loop()
 
 //function init(){
 

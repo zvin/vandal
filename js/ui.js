@@ -430,6 +430,23 @@ function mask_shift(){
     //cpt++
 }
 
+function select_color(context, use_pen, red, green, blue){
+    if (!use_pen){ // not use_pen: use eraser
+        context.globalCompositeOperation = "destination-out"
+    }else{
+        context.globalCompositeOperation = "source-over"
+        context.strokeStyle = "rgb(" + red + "," + green + "," + blue + ")"
+    }
+}
+
+function line(context, x1, y1, x2, y2){
+    context.beginPath()
+    context.moveTo(x1, y1)
+    context.lineTo(x2, y2)
+    context.stroke()
+    context.closePath()
+}
+
 function draw_line(x1, y1, x2, y2, duration, red, green, blue, use_pen, context){
     if (duration <= 0){
         return
@@ -439,18 +456,9 @@ function draw_line(x1, y1, x2, y2, duration, red, green, blue, use_pen, context)
         return
     }
     var speed = d / duration
-    if (!use_pen){ // not use_pen: use eraser
-        context.globalCompositeOperation = "destination-out"
-    }else{
-        context.globalCompositeOperation = "source-over"
-        context.strokeStyle = "rgb(" + red + "," + green + "," + blue + ")"
-    }
+    select_color(context, use_pen, red, green, blue)
     context.lineWidth = 1 / (1.3 + (3 * speed))
-    context.beginPath()
-    context.moveTo(x1, y1)
-    context.lineTo(x2, y2)
-    context.stroke()
-    context.closePath()
+    line(context, x1, y1, x2, y2)
 }
 
 function copy_img_in_canvas(blob_id){
