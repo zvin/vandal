@@ -529,6 +529,15 @@ function unwrap_document_from_iframe(){
     )
 }
 
+function doctype_to_string(d){
+    return "<!DOCTYPE "
+         + d.name
+         + (d.publicId ? ' PUBLIC "' + d.publicId + '"' : '')
+         + (!d.publicId && d.systemId ? ' SYSTEM' : '')
+         + (d.systemId ? ' "' + d.systemId + '"' : '')
+         + '>'
+}
+
 function wrap_document_in_iframe(){
     var height = Math.max(document.documentElement.scrollHeight, HEIGHT)
     var doctype = document.doctype
@@ -551,13 +560,15 @@ function wrap_document_in_iframe(){
         "border"  : 0
     })
     frame.onload = function(){
-        frame.contentWindow.document.replaceChild(documentElement, frame.contentWindow.document.documentElement)
         if (doctype){
-            frame.contentWindow.document.insertBefore(
-                doctype.cloneNode(true),
-                frame.contentWindow.document.documentElement
-            )
+            frame.contentWindow.document.open()
+            frame.contentWindow.document.write(doctype_to_string(doctype))
+            frame.contentWindow.document.close()
         }
+        frame.contentWindow.document.replaceChild(
+            documentElement,
+            frame.contentWindow.document.documentElement
+        )
         put_embeds_down()
     }
     frame_div.appendChild(frame)
