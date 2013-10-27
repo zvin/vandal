@@ -544,19 +544,19 @@ function wrap_document_in_iframe(){
         "transform-origin": "0 0",
         "-webkit-transform-origin": "0 0"
     })
-    function create_frame(){
-        return create_element("iframe", {
-            "width"   : "100%",
-            "height"  : height + "px",
-            "overflow": "hidden",
-            "border"  : 0
-        })
-    }
-    frame = create_frame()
+    frame = create_element("iframe", {
+        "width"   : "100%",
+        "height"  : height + "px",
+        "overflow": "hidden",
+        "border"  : 0
+    })
     frame.onload = function(){
         frame.contentWindow.document.replaceChild(documentElement, frame.contentWindow.document.documentElement)
         if (doctype){
-            frame.contentWindow.document.insertBefore(doctype, frame.contentWindow.document.documentElement)
+            frame.contentWindow.document.insertBefore(
+                doctype.cloneNode(true),
+                frame.contentWindow.document.documentElement
+            )
         }
         put_embeds_down()
     }
