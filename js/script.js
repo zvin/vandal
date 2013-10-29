@@ -24,6 +24,7 @@ var DOMAIN                  = "DOMAIN_PLACEHOLDER",
     incoming_blobs          = [],
     zoom                    = 1.0,
     is_decoding             = false,
+    mask_dirty              = false,
     chat_div, myPicker, nickname_span, canvas, messages_div, mySocket,
     mask_canvas, ctx, mask_ctx, biggest_node, last_time, loading_box,
     progress_bar, warning_box, frame_div, frame, error_message_div, zoom_slider
@@ -81,6 +82,14 @@ function render_loop(){
     }
     while(lines_to_draw.length > 0){
         draw_line.apply(this, lines_to_draw.shift())
+    }
+    // anti-lag mask canvas
+    if (mask_dirty){
+        mask_ctx.clearRect(0, 0, mask_canvas.width, mask_canvas.height)
+        for (var i=0; i < mask_lines.length; i++){
+            draw_line.apply(this, mask_lines[i])
+        }
+        mask_dirty = false
     }
 }
 render_loop()

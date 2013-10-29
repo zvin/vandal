@@ -406,28 +406,15 @@ function get_my_color(){
     return myPicker.rgb.map(function(x){return Math.round(x * 255)})
 }
 
-function mask_redraw(){
-    if (mask_lines.length > max_size){
-        max_size = mask_lines.length
-    }
-    mask_ctx.clearRect(0, 0, mask_canvas.width, mask_canvas.height)
-    for (var i=0; i < mask_lines.length; i++){
-        draw_line.apply(this, mask_lines[i].concat([mask_ctx]))
-    }
-}
-
 function mask_push(line){
+    line.push(mask_ctx)
     mask_lines.push(line)
-    draw_line.apply(this, line.concat([mask_ctx]))
+    lines_to_draw.push(line)
 }
 
-//cpt = 0
 function mask_shift(){
     mask_lines.shift()
-    //if (cpt % 100 == 0){
-        mask_redraw()
-    //}
-    //cpt++
+    mask_dirty = true
 }
 
 function select_color(context, use_pen, red, green, blue){
