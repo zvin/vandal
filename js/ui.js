@@ -431,7 +431,6 @@ function line(context, x1, y1, x2, y2){
     context.moveTo(x1, y1)
     context.lineTo(x2, y2)
     context.stroke()
-    context.closePath()
 }
 
 function draw_line(x1, y1, x2, y2, duration, red, green, blue, use_pen, context){
