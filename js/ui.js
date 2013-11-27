@@ -462,17 +462,17 @@ function draw_delta(lines){
 }
 
 function load_image(url){
-    var request = new XMLHttpRequest();
-    request.onprogress = updateProgressBar;
-    request.onload = showImage;
-    request.onloadend = set_loading_off;
-    request.open("GET", url, true);
-    request.responseType = 'arraybuffer';
-    request.send(null);
+    var request = new XMLHttpRequest()
+    request.onprogress = updateProgressBar
+    request.onload = showImage
+    request.onloadend = set_loading_off
+    request.open("GET", url, true)
+    request.responseType = 'arraybuffer'
+    request.send(null)
 
     function updateProgressBar(e){
         if (e.lengthComputable)
-            progress_bar.value = e.loaded / e.total * 100;
+            progress_bar.value = e.loaded / e.total * 100
     }
 
     function showImage(){
@@ -480,7 +480,7 @@ function load_image(url){
             // in firefox an image with src = "blob:..." won't work if location is about:blank
             copy_img_in_canvas(url)
         }else{
-            var blob = new Blob([new Uint8Array(request.response)], {"type": "image/png"});
+            var blob = new Blob([new Uint8Array(request.response)], {"type": "image/png"})
             copy_img_in_canvas((window.URL||window.webkitURL).createObjectURL(blob))
         }
     }
