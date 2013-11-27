@@ -449,10 +449,10 @@ function draw_line(x1, y1, x2, y2, duration, red, green, blue, use_pen, context)
 
 function copy_img_in_canvas(blob_id){
     var img = new Image()
-    img.src = blob_id;
     img.onload = function(){
         ctx.drawImage(img, 0, 0)
     }
+    img.src = blob_id
 }
 
 function draw_delta(lines){
@@ -476,8 +476,13 @@ function load_image(url){
     }
 
     function showImage(){
-        var blob = new Blob([new Uint8Array(request.response)], {"type": "image/png"});
-        copy_img_in_canvas((window.URL||window.webkitURL).createObjectURL(blob))
+        if ((document.location == "about:blank") && (/firefox/i.test(navigator.userAgent))){
+            // in firefox an image with src = "blob:..." won't work if location is about:blank
+            copy_img_in_canvas(url)
+        }else{
+            var blob = new Blob([new Uint8Array(request.response)], {"type": "image/png"});
+            copy_img_in_canvas((window.URL||window.webkitURL).createObjectURL(blob))
+        }
     }
 }
 
