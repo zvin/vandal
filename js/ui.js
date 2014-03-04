@@ -532,8 +532,17 @@ function doctype_to_string(d){
 function wrap_document_in_iframe(){
     var height = Math.max(document.documentElement.scrollHeight, HEIGHT)
     var doctype = document.doctype
-    var documentElement = document.documentElement.cloneNode(true)  // clone page
-    documentElement.removeChild(documentElement.lastChild)  // remove this script
+    var documentElement
+    if ((document.contentType !== undefined) && (document.contentType.startsWith("image/"))) {
+        // Firefox image workaround: remove all html it adds around the image
+        documentElement = create_element("body", {"margin": "0px"})
+        var img = create_element("img")
+        img.src = document.location
+        documentElement.appendChild(img)
+    } else {
+        documentElement = document.documentElement.cloneNode(true)  // clone page
+        documentElement.removeChild(documentElement.lastChild)  // remove this script
+    }
     var doc = document.createElement('html')
     doc.appendChild(document.createElement('body'))
     document.replaceChild(doc, document.documentElement)  // replace this page with a new one
