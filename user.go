@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/garyburd/go-websocket/websocket"
+	"github.com/gorilla/websocket"
 	"github.com/ugorji/go/codec"
 	"io/ioutil"
 	"strconv"
@@ -13,13 +13,13 @@ const (
 	MAX_USERS_PER_LOCATION = 20
 	MAX_NICKNAME_LENGTH    = 20
 	SEND_CHANNEL_SIZE      = 256
-	// Time allowed to write a message to the client.
+	// Time allowed to write a message to the peer.
 	WRITE_WAIT = 5 * time.Second
-	// Time allowed to read the next message from the client.
-	READ_WAIT = 20 * time.Second
-	// Send pings to client with this period. Must be less than READ_WAIT.
-	PING_PERIOD = READ_WAIT / 2
-	// Maximum message size allowed from client.
+	// Time allowed to read the next pong message from the peer.
+	PONG_WAIT = 20 * time.Second
+	// Send pings to client with this period. Must be less than PONG_WAIT.
+	PING_PERIOD = PONG_WAIT / 2
+	// Maximum message size allowed from peer.
 	// must be at least 4 * MAX_CHAT_MESSAGE_LENGTH (in script.js)
 	MAX_MESSAGE_SIZE      = 1024
 	LAST_USER_ID_FILENAME = "last_user_id"
@@ -143,12 +143,12 @@ func (user *User) Sender(ws *websocket.Conn) {
 					// channel is closed: user left
 					return
 				}
-				if err := write(ws, websocket.OpBinary, *data); err != nil {
+				if err := write(ws, websocket.BinaryMessage, *data); err != nil {
 					user.Kick(err.Error())
 					return
 				}
 			case <-ticker.C:
-				if err := write(ws, websocket.OpPing, []byte{}); err != nil {
+				if err := write(ws, websocket.PingMessage, []byte{}); err != nil {
 					user.Kick(err.Error())
 					return
 				}
@@ -162,7 +162,11 @@ func (user *User) Receiver(location *Location, ws *websocket.Conn) {
 	// receives and decodes messages from users
 	go func() {
 		ws.SetReadLimit(MAX_MESSAGE_SIZE)
-		ws.SetReadDeadline(time.Now().Add(READ_WAIT))
+		ws.SetReadDeadline(time.Now().Add(PONG_WAIT))
+		ws.SetPongHandler(func(string) error {
+			ws.SetReadDeadline(time.Now().Add(PONG_WAIT))
+			return nil
+		})
 		for {
 			op, r, err := ws.NextReader()
 			if err != nil {
@@ -170,9 +174,7 @@ func (user *User) Receiver(location *Location, ws *websocket.Conn) {
 				return
 			}
 			switch op {
-			case websocket.OpPong:
-				ws.SetReadDeadline(time.Now().Add(READ_WAIT))
-			case websocket.OpBinary:
+			case websocket.BinaryMessage:
 				data, err := ioutil.ReadAll(r)
 				if err != nil {
 					user.Kick(err.Error())

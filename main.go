@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/garyburd/go-websocket/websocket"
+	"github.com/gorilla/websocket"
 	"html/template"
 	"io"
 	"log"
@@ -43,7 +43,7 @@ func socket_handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ws, err := websocket.Upgrade(w, r.Header, nil, 1024, 1024)
+	ws, err := websocket.Upgrade(w, r, nil, 1024, 1024)
 	if err != nil {
 		Log.Println(err)
 		return
@@ -54,7 +54,7 @@ func socket_handler(w http.ResponseWriter, r *http.Request) {
 	close_msg := ""
 	defer func() {
 		ws.WriteControl(
-			websocket.OpClose,
+			websocket.CloseMessage,
 			websocket.FormatCloseMessage(websocket.CloseNormalClosure, close_msg),
 			time.Now().Add(WRITE_WAIT),
 		)
