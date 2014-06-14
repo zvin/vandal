@@ -124,7 +124,7 @@ function create_toolbar(){
         "float"     : "left",
         "width"     : "183px",
         "margin"    : "0",
-        "padding"   : "0",
+        "padding"   : "0"
     })
     var zoom_msg = "Use Alt + mousewheel to zoom in and out"
     zoom_max_img.title = zoom_msg
