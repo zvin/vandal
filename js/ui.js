@@ -122,7 +122,9 @@ function create_toolbar(){
     })
     zoom_slider = create_element("input", {
         "float"     : "left",
-        "width"     : "162px"
+        "width"     : "183px",
+        "margin"    : "0",
+        "padding"   : "0",
     })
     var zoom_msg = "Use Alt + mousewheel to zoom in and out"
     zoom_max_img.title = zoom_msg
