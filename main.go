@@ -91,7 +91,7 @@ func socket_handler(w http.ResponseWriter, r *http.Request) {
 func signal_handler(c chan os.Signal) {
 	Log.Printf("signal %v\n", <-c)
 	CloseAllLocations()
-	WriteIntToFile(<-userIdGenerator, LAST_USER_ID_FILENAME)
+	WriteIntToFile(lastUserId, LAST_USER_ID_FILENAME)
 	os.Exit(0)
 }
 

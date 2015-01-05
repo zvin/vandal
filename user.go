@@ -6,6 +6,7 @@ import (
 	"github.com/ugorji/go/codec"
 	"io/ioutil"
 	"strconv"
+	"sync/atomic"
 	"time"
 )
 
@@ -26,8 +27,8 @@ const (
 )
 
 var (
-	userIdGenerator chan int
-	msgpackHandle   codec.MsgpackHandle
+	lastUserId    uint32
+	msgpackHandle codec.MsgpackHandle
 )
 
 type User struct {
@@ -46,7 +47,7 @@ type User struct {
 
 func NewUser() *User {
 	user := new(User)
-	user.UserId = <-userIdGenerator
+	user.UserId = int(atomic.AddUint32(&lastUserId, 1))
 	user.Nickname = strconv.Itoa(user.UserId)
 	user.UsePen = true
 	user.sendData = make(chan *[]byte, SEND_CHANNEL_SIZE)
@@ -55,14 +56,7 @@ func NewUser() *User {
 }
 
 func init() {
-	userIdGenerator = make(chan int)
-	go func() {
-		i := ReadIntFromFile(LAST_USER_ID_FILENAME)
-		for {
-			userIdGenerator <- i
-			i += 1
-		}
-	}()
+	lastUserId = ReadIntFromFile(LAST_USER_ID_FILENAME)
 }
 
 func encodeEvent(event *[]interface{}) (*[]byte, error) {

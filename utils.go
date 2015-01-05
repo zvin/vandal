@@ -103,7 +103,7 @@ func TryQueryUnescape(s string) string {
 	return label
 }
 
-func ReadIntFromFile(filename string) int {
+func ReadIntFromFile(filename string) uint32 {
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return 1
@@ -112,9 +112,9 @@ func ReadIntFromFile(filename string) int {
 	if err != nil {
 		return 1
 	}
-	return value
+	return uint32(value)
 }
 
-func WriteIntToFile(value int, filename string) {
+func WriteIntToFile(value uint32, filename string) {
 	ioutil.WriteFile(filename, []byte(fmt.Sprintf("%d", value)), 0600)
 }
