@@ -39,7 +39,7 @@ $(JSOUT): $(JSFILES) DOMAIN DEBUG HTTPS_PORT HTTP_PORT
 	$(dir_guard)
 	cat $(JSFILES) > $(JSOUT)
 ifeq ($(DEBUG),true)
-	@echo "You sould get google closure-compiler from http://code.google.com/p/closure-compiler/"
+	@echo "You sould get google closure-compiler from http://dl.google.com/closure-compiler/compiler-latest.zip"
 	@echo "and put compiler.jar in this folder."
 	@echo "I will only concatenate script files (no minifying)."
 else

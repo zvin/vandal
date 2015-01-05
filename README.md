@@ -17,7 +17,7 @@ Install dependencies
  * optionnal (for javascript minification):
 
     ```shell
-    wget http://closure-compiler.googlecode.com/files/compiler-latest.zip
+    wget http://dl.google.com/closure-compiler/compiler-latest.zip
     unzip compiler-latest.zip
     ```
 
