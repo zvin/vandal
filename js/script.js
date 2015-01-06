@@ -21,7 +21,8 @@ var DOMAIN                  = "DOMAIN_PLACEHOLDER",
     chat_was_visible        = null,
     zoom                    = 1.0,
     mask_dirty              = false,
-    chat_div, myPicker, nickname_span, canvas, messages_div, mySocket,
+    my_color                = [0, 0, 0],
+    chat_div, nickname_span, canvas, messages_div, mySocket,
     mask_canvas, ctx, mask_ctx, last_time, loading_box,
     progress_bar, warning_box, frame_div, frame, error_message_div, zoom_slider
 
@@ -32,6 +33,10 @@ function distance(x1, y1, x2, y2){
 
 function logn(i, base){
     return Math.log(i) / Math.log(base)
+}
+
+function color_negative(rgb) {
+    return [255 - rgb[0], 255 - rgb[1],  255 - rgb[2]]
 }
 
 function time_since_last_time(){

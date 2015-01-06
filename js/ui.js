@@ -77,11 +77,103 @@ function create_toolbar(){
     button_color.style.margin = "12px"
     button_color.style.border = "1px solid black"
     button_color.style.padding = "0px"
-    myPicker = new jscolor.color(button_color, {})
-    myPicker.fromString('000000')
-    button_color.onchange = function(){
-        send_change_color.apply(this, get_my_color())
-    }
+    var color_picker_container = create_element("div", {
+            "background-color": "white",
+            "height"          : "150px",
+            "border"          : "1px solid lightgray",
+            "border-radius"   : "2px",
+            "margin-top"      : "80px",
+            "padding"         : "10px",
+            "display"         : "none"
+        }),
+        color_picker_picker_wrapper = create_element("div", {
+            "float"   : "left",
+            "left"    : "15px",
+            "width"   : "200px",
+            "height"  : "150px",
+            "position": "relative",
+            "display" : "inline-block"
+        }),
+        color_picker_picker = create_element("div", {
+            "height"  : "150px"
+        }),
+        color_picker_picker_indicator = create_element("div", {
+            "width"   : "4px",
+            "height"  : "4px",
+            "position": "absolute",
+            "border"  : "1px solid white"
+        }),
+        color_picker_slider_wrapper = create_element("div", {
+            "float"   : "left",
+            "width"   : "30px",
+            "height"  : "150px",
+            "position": "relative",
+            "display" : "inline-block"
+        }),
+        color_picker_slider = create_element("div", {
+            "height"  : "150px"
+        }),
+        color_picker_slider_indicator = create_element("div", {
+            "width"   : "100%",
+            "height"  : "10px",
+            "left"    : "-1px",
+            "position": "absolute",
+            "border"  : "1px solid black"
+        })
+    color_picker_slider_wrapper.appendChild(color_picker_slider)
+    color_picker_slider_wrapper.appendChild(color_picker_slider_indicator)
+    color_picker_picker_wrapper.appendChild(color_picker_picker)
+    color_picker_picker_wrapper.appendChild(color_picker_picker_indicator)
+    color_picker_container.appendChild(color_picker_slider_wrapper)
+    color_picker_container.appendChild(color_picker_picker_wrapper)
+    button_color.addEventListener(
+        "click",
+        function(e) {
+            if (color_picker_container.style.display === "none") {
+                color_picker_container.style.display = "block"
+            } else {
+                color_picker_container.style.display = "none"
+            }
+        },
+        false
+    )
+
+    var first_time_color_changes = true;
+    var cp = ColorPicker(
+        color_picker_slider,
+        color_picker_picker,
+        function(hex, hsv, rgb, pickerCoordinate, sliderCoordinate) {
+            ColorPicker.positionIndicators(
+                color_picker_slider_indicator,
+                color_picker_picker_indicator,
+                sliderCoordinate,
+                pickerCoordinate
+            )
+            my_color = [rgb.r, rgb.g, rgb.b]
+            var negative = color_negative(my_color)
+            color_picker_picker_indicator.style.borderColor = (
+                "rgb(" + negative[0] + "," + negative[1] + "," + negative[2] + ")"
+            )
+            button_color.style.backgroundColor = hex
+            if (first_time_color_changes) {
+                first_time_color_changes = false
+            } else {
+                // this works only when websocket is ready
+                send_change_color.apply(this, my_color)
+            }
+        }
+    )
+    cp.setHex("#000000")
+    ColorPicker.positionIndicators(
+        color_picker_slider_indicator,
+        color_picker_picker_indicator,
+        {"x": 0, "y": -6},
+        {"x": -3, "y": 147}
+    )
+    cp.fixIndicators(
+        color_picker_slider_indicator,
+        color_picker_picker_indicator
+    )
     // end color
     // toggle_chat
     function toggle_chat_window(){
@@ -158,6 +250,7 @@ function create_toolbar(){
     toolbar.appendChild(zoom_min_img)
     toolbar.appendChild(zoom_slider)
     toolbar.appendChild(zoom_max_img)
+    toolbar.appendChild(color_picker_container)
     toolbar.style.zIndex = 4
     document.body.appendChild(toolbar)
 
@@ -402,10 +495,6 @@ function add_message(msg, timestamp){
     }else{
         messages_div.insertBefore(msg, messages_div.firstChild)
     }
-}
-
-function get_my_color(){
-    return myPicker.rgb.map(function(x){return Math.round(x * 255)})
 }
 
 function mask_push(line){

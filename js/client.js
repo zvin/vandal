@@ -156,8 +156,7 @@ function mousemove(ev){
     if (duration < MOUSEMOVE_DELAY) return
     // offset for chrome and layer for mozilla
     var mouse_x  = ev.offsetX || ev.layerX,
-        mouse_y  = ev.offsetY || ev.layerY,
-        my_color
+        mouse_y  = ev.offsetY || ev.layerY
     send_event([
         EventType.mouse_move,
         mouse_x,               // x
@@ -166,13 +165,12 @@ function mousemove(ev){
     ])
     if (my_use_pen && my_mouse_is_down && my_last_x != null){
         // anti-lag system
-        my_color = get_my_color()
         mask_push([
-            my_last_x, my_last_y,                              // origin
-            mouse_x, mouse_y,                                  // destination
-            duration,                                          // duration
-            my_color[0], my_color[1], my_color[2],             // color
-            true                                               // pen not eraser
+            my_last_x, my_last_y,                   // origin
+            mouse_x, mouse_y,                       // destination
+            duration,                               // duration
+            my_color[0], my_color[1], my_color[2],  // color
+            true                                    // pen not eraser
         ])
     }
     my_last_x = mouse_x
