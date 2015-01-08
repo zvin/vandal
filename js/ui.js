@@ -77,6 +77,7 @@ function create_toolbar(){
     button_color.style.margin = "12px"
     button_color.style.border = "1px solid black"
     button_color.style.padding = "0px"
+    button_color.onfocus = function(){this.blur()}
     var color_picker_container = create_element("div", {
             "background-color": "white",
             "height"          : "150px",
