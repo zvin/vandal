@@ -189,9 +189,9 @@
      * @param {DOMElement} pickerElement HSV picker element.
      * @param {Function} callback Called whenever the color is changed provided chosen color in RGB HEX format as the only argument.
      */
-    function ColorPicker(slideElement, pickerElement, callback) {
+    function ColorPicker(slideElement, pickerElement, callback, mouseUpCallback) {
 
-        if (!(this instanceof ColorPicker)) return new ColorPicker(slideElement, pickerElement, callback);
+        if (!(this instanceof ColorPicker)) return new ColorPicker(slideElement, pickerElement, callback, mouseUpCallback);
 
         this.h = 0;
         this.s = 1;
@@ -218,8 +218,8 @@
                 ColorPicker.positionIndicators(this.slideIndicator, this.pickerIndicator, slideCoordinate, pickerCoordinate);
                 pickerElement(hex, hsv, rgb);
             };
-
         } else {
+            this.mouseUpCallback = mouseUpCallback;
             this.callback = callback;
             this.pickerElement = pickerElement;
             this.slideElement = slideElement;
@@ -257,8 +257,13 @@
 
         uniqID++;
 
-        enableDragging(this.slideElement, this.slide_listener);
-        enableDragging(this.pickerElement, this.picker_listener);
+        var self = this;
+        function mouseUp() {
+            self.mouseUpCallback(hsv2rgb(self));
+        }
+
+        enableDragging(this.slideElement, this.slide_listener, mouseUp);
+        enableDragging(this.pickerElement, this.picker_listener, mouseUp);
     }
 
    /**
@@ -266,7 +271,7 @@
     * @param {DOMElement} element HSV slide element or HSV picker element.
     * @param {Function} listener Function that will be called whenever mouse is dragged over the element with event object as argument.
     */
-    function enableDragging(element, listener) {
+    function enableDragging(element, listener, mouseUpListener) {
         var mousedown = false;
         function mouseDown(evt) {
             mousedown = true;
@@ -282,6 +287,7 @@
             // stop listening to mouse move/up on document after mouse up
             document.removeEventListener('mouseup', mouseUp, false);
             document.removeEventListener('mousemove', mouseMove, false);
+            mouseUpListener && mouseUpListener();
         }
         element.addEventListener('mousedown', mouseDown, false);
     }

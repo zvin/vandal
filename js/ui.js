@@ -98,10 +98,11 @@ function create_toolbar(){
             "height"  : "150px"
         }),
         color_picker_picker_indicator = create_element("div", {
-            "width"   : "4px",
-            "height"  : "4px",
-            "position": "absolute",
-            "border"  : "1px solid white"
+            "width"         : "4px",
+            "height"        : "4px",
+            "position"      : "absolute",
+            "border"        : "1px solid white",
+            "pointer-events": "none"
         }),
         color_picker_slider_wrapper = create_element("div", {
             "float"   : "left",
@@ -114,11 +115,12 @@ function create_toolbar(){
             "height"  : "150px"
         }),
         color_picker_slider_indicator = create_element("div", {
-            "width"   : "100%",
-            "height"  : "10px",
-            "left"    : "-1px",
-            "position": "absolute",
-            "border"  : "1px solid black"
+            "width"         : "100%",
+            "height"        : "10px",
+            "left"          : "-1px",
+            "position"      : "absolute",
+            "border"        : "1px solid black",
+            "pointer-events": "none"
         })
     color_picker_slider_wrapper.appendChild(color_picker_slider)
     color_picker_slider_wrapper.appendChild(color_picker_slider_indicator)
@@ -142,6 +144,7 @@ function create_toolbar(){
     var cp = ColorPicker(
         color_picker_slider,
         color_picker_picker,
+        // mouse move callback: update indicators
         function(hex, hsv, rgb, pickerCoordinate, sliderCoordinate) {
             ColorPicker.positionIndicators(
                 color_picker_slider_indicator,
@@ -149,18 +152,16 @@ function create_toolbar(){
                 sliderCoordinate,
                 pickerCoordinate
             )
-            my_color = [rgb.r, rgb.g, rgb.b]
-            var negative = color_negative(my_color)
+            var negative = color_negative([rgb.r, rgb.g, rgb.b])
             color_picker_picker_indicator.style.borderColor = (
-                "rgb(" + negative[0] + "," + negative[1] + "," + negative[2] + ")"
+                "rgb(" + negative[0] + "," + negative[1] + "," + negative[2] +
+                ")"
             )
             button_color.style.backgroundColor = hex
-            if (first_time_color_changes) {
-                first_time_color_changes = false
-            } else {
-                // this works only when websocket is ready
-                send_change_color.apply(this, my_color)
-            }
+        },
+        function(rgb) {  // mouse up callback: set color
+            my_color = [rgb.r, rgb.g, rgb.b]
+            send_change_color.apply(this, my_color)
         }
     )
     cp.setHex("#000000")
@@ -169,10 +170,6 @@ function create_toolbar(){
         color_picker_picker_indicator,
         {"x": 0, "y": -6},
         {"x": -3, "y": 147}
-    )
-    cp.fixIndicators(
-        color_picker_slider_indicator,
-        color_picker_picker_indicator
     )
     // end color
     // toggle_chat
