@@ -44,7 +44,6 @@ function create_toolbar(){
         "border-radius"   : "5px 0px 0px 5px",
         "box-shadow"      : "-2px 2px 5px 0px rgba(0, 0, 0, 0.3)"
     })
-    toolbar.id = "fixed_toolbar"  // needed for jscolor
     var button_toggle_chat = create_button("chat.png"),
         button_color       = create_element("input"),
         handle             = create_element("div"),
