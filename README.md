@@ -51,7 +51,7 @@ Run the server
 
     ```shell
     cd build
-    ./vandal -p 8000 -sp 4430 -cert /path/to/certfile -key /path/to/keyfile -f
+    ./vandal -p 8000 -sp 4430 -cert /path/to/certfile -key /path/to/keyfile -host localhost -f
     ```
 
  * open your browser at http://localhost:8000
@@ -60,6 +60,7 @@ Run the server
  * -sp HTTPS_PORT (https is needed to be able to draw over https websites)
  * -cert defaults to "cert"
  * -key defaults to "key"
+ * -host defaults to localhost
 
 License
 -------

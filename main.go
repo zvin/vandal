@@ -22,13 +22,16 @@ const (
 )
 
 var (
-	http_port      *int    = flag.Int("p", 8000, "Port to listen for http.")
-	https_port     *int    = flag.Int("sp", 4430, "Port to listen for https.")
-	certfile       *string = flag.String("cert", "cert", "Certificate file.")
-	keyfile        *string = flag.String("key", "key", "Key file.")
-	foreground     *bool   = flag.Bool("f", false, "Log on stdout.")
-	index_template         = template.Must(template.ParseFiles("templates/index.html"))
-	Log            *log.Logger
+	http_port            *int    = flag.Int("p", 8000, "Port to listen for http.")
+	https_port           *int    = flag.Int("sp", 4430, "Port to listen for https.")
+	host                 *string = flag.String("host", "localhost", "Website host.")
+	certfile             *string = flag.String("cert", "cert", "Certificate file.")
+	keyfile              *string = flag.String("key", "key", "Key file.")
+	foreground           *bool   = flag.Bool("f", false, "Log on stdout.")
+	index_template               = template.Must(template.ParseFiles("templates/index.html"))
+	Log                  *log.Logger
+	host_with_http_port  string
+	host_with_https_port string
 )
 
 type JoinRequest struct {
@@ -37,6 +40,10 @@ type JoinRequest struct {
 }
 
 func socket_handler(w http.ResponseWriter, r *http.Request) {
+
+	if redirect_to_host(w, r) {
+		return
+	}
 
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", 405)
@@ -100,6 +107,8 @@ func init() {
 	os.MkdirAll(IMAGES_DIR, 0777)
 	os.MkdirAll(LOG_DIR, 0777)
 	flag.Parse()
+	host_with_http_port = fmt.Sprintf("%s:%d", *host, *http_port)
+	host_with_https_port = fmt.Sprintf("%s:%d", *host, *https_port)
 	now := time.Now()
 	var log_file io.Writer
 	var err error
@@ -113,6 +122,28 @@ func init() {
 		}
 	}
 	Log = log.New(log_file, "", log.LstdFlags)
+}
+
+func redirect_to_host(w http.ResponseWriter, r *http.Request) bool {
+	if r.Host != *host && r.Host != host_with_http_port && r.Host != host_with_https_port {
+		if *http_port == 443 {
+			r.URL.Host = *host
+		} else {
+			r.URL.Host = host_with_https_port
+		}
+		r.URL.Scheme = "https"
+		http.Redirect(w, r, r.URL.String(), 301)
+		return true
+	}
+	return false
+}
+
+func redirectHandler(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !redirect_to_host(w, r) {
+			h.ServeHTTP(w, r)
+		}
+	})
 }
 
 func index_handler(w http.ResponseWriter, r *http.Request) {
@@ -134,9 +165,9 @@ func maxAgeHandler(seconds int, h http.Handler) http.Handler {
 
 func main() {
 	http.HandleFunc("/ws", socket_handler)
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(STATIC_DIR))))
-	http.Handle("/img/", maxAgeHandler(0, http.StripPrefix("/img/", http.FileServer(http.Dir(IMAGES_DIR)))))
-	http.Handle("/", http.HandlerFunc(index_handler))
+	http.Handle("/static/", redirectHandler(http.StripPrefix("/static/", http.FileServer(http.Dir(STATIC_DIR)))))
+	http.Handle("/img/", redirectHandler(maxAgeHandler(0, http.StripPrefix("/img/", http.FileServer(http.Dir(IMAGES_DIR))))))
+	http.Handle("/", redirectHandler(http.HandlerFunc(index_handler)))
 
 	SignalChan := make(chan os.Signal)
 	go signal_handler(SignalChan)
