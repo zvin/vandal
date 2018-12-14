@@ -14,7 +14,7 @@ Install dependencies
     go install github.com/gorilla/websocket github.com/ugorji/go/codec github.com/zvin/gocairo
     ```
 
- * optionnal (for javascript minification):
+ * optional (for javascript minification):
 
     ```shell
     wget http://dl.google.com/closure-compiler/compiler-latest.zip
