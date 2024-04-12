@@ -22,7 +22,7 @@ const (
 	// Maximum message size allowed from peer.
 	// must be at least 4 * MAX_CHAT_MESSAGE_LENGTH (in script.js)
 	MAX_MESSAGE_SIZE      = 1024
-	LAST_USER_ID_FILENAME = "last_user_id"
+	LAST_USER_ID_FILENAME = "data/last_user_id"
 )
 
 var (

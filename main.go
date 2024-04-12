@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	CHAT_DIR   = "chat"
-	IMAGES_DIR = "img"
-	LOG_DIR    = "log"
+	CHAT_DIR   = "data/chat"
+	IMAGES_DIR = "data/img"
+	LOG_DIR    = "data/log"
 	STATIC_DIR = "static"
 )
 
@@ -164,9 +164,10 @@ func maxAgeHandler(seconds int, h http.Handler) http.Handler {
 }
 
 func main() {
+	img_path := fmt.Sprintf("/%s/", IMAGES_DIR)
 	http.HandleFunc("/ws", socket_handler)
 	http.Handle("/static/", redirectHandler(http.StripPrefix("/static/", http.FileServer(http.Dir(STATIC_DIR)))))
-	http.Handle("/img/", redirectHandler(maxAgeHandler(0, http.StripPrefix("/img/", http.FileServer(http.Dir(IMAGES_DIR))))))
+	http.Handle(img_path, redirectHandler(maxAgeHandler(0, http.StripPrefix(img_path, http.FileServer(http.Dir(IMAGES_DIR))))))
 	http.Handle("/", redirectHandler(http.HandlerFunc(index_handler)))
 
 	SignalChan := make(chan os.Signal)
