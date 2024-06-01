@@ -5,10 +5,6 @@ DEBUG=$(shell cat DEBUG)
 COMMIT=$(shell git log -n1 --pretty=format:%H)
 
 dir_guard=@mkdir -p $(@D)  # create the folder of the target if it doesn't exist
-CLOSURECOMPILER=compiler.jar
-ifeq ($(wildcard $(CLOSURECOMPILER)),)
-	DEBUG=true
-endif
 BUILD=build
 GOOUT=$(BUILD)/vandal
 GOFILES=eventtype.go location.go main.go user.go messageslog.go utils.go currently_used_sites.go
@@ -39,11 +35,9 @@ $(JSOUT): $(JSFILES) DOMAIN DEBUG HTTPS_PORT HTTP_PORT
 	$(dir_guard)
 	cat $(JSFILES) > $(JSOUT)
 ifeq ($(DEBUG),true)
-	@echo "You sould get google closure-compiler from http://dl.google.com/closure-compiler/compiler-latest.zip"
-	@echo "and put compiler.jar in this folder."
 	@echo "I will only concatenate script files (no minifying)."
 else
-	java -jar $(CLOSURECOMPILER) --js $(JSOUT) --compilation_level SIMPLE_OPTIMIZATIONS --js_output_file $(JSOUT).min
+	google-closure-compiler --js $(JSOUT) --compilation_level SIMPLE_OPTIMIZATIONS --js_output_file $(JSOUT).min
 	mv $(JSOUT).min $(JSOUT)
 endif
 	sed -i 's/DOMAIN_PLACEHOLDER/'$(DOMAIN)'/g' $(JSOUT)
