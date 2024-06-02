@@ -21,4 +21,4 @@ FROM debian:bookworm
 RUN apt-get update && apt-get -y install libcairo2
 COPY --from=build /usr/src/app/build /usr/src/app/build
 WORKDIR /usr/src/app/build
-CMD exec ./vandal -f -p $HTTP_PORT -sp $HTTPS_PORT -host $DOMAIN
+ENTRYPOINT ["/usr/src/app/build/vandal", "-f"]

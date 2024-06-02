@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -21,10 +22,18 @@ const (
 	STATIC_DIR = "static"
 )
 
+func getenv(key, fallback string) string {
+	value := os.Getenv(key)
+	if len(value) == 0 {
+		return fallback
+	}
+	return value
+}
+
 var (
-	http_port            *int    = flag.Int("p", 8000, "Port to listen for http.")
-	https_port           *int    = flag.Int("sp", 4430, "Port to listen for https.")
-	host                 *string = flag.String("host", "localhost", "Website host.")
+	http_port            *int    = flag.Int("p", 80, "Port to listen for http.")
+	https_port           *int    = flag.Int("sp", 443, "Port to listen for https.")
+	host                 *string = flag.String("host", getenv("DOMAIN", "localhost"), "Website host.")
 	certfile             *string = flag.String("cert", "cert", "Certificate file.")
 	keyfile              *string = flag.String("key", "key", "Key file.")
 	foreground           *bool   = flag.Bool("f", false, "Log on stdout.")
@@ -172,7 +181,7 @@ func main() {
 
 	SignalChan := make(chan os.Signal)
 	go signal_handler(SignalChan)
-	signal.Notify(SignalChan, os.Interrupt, os.Kill)
+	signal.Notify(SignalChan, syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM, syscall.SIGQUIT)
 
 	go func() {
 		Log.Printf("Listening on port %d\n", *https_port)
